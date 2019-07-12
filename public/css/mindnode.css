@@ -1,0 +1,7 @@
+#selectedNode > rect {
+  fill-opacity: 0.2;
+}
+#hidden {
+  font-size: 14px;
+  visibility: hidden;
+}
