@@ -9,8 +9,23 @@
   <script src="js/axios.min.js"></script>
 </head>
 <body>
-  <svg id="mindnode"></svg>
-  <svg id="hidden"></svg>
+  <svg>
+    <g id="outline"></g>
+    <g id="mindnode"></g>
+    <g id="hidden"></g>
+  </svg>
+  <script>
+    const svg = d3.select('svg');
+    const fontSize = 14;
+    const svgSize = {
+      width: 1300, height: 650,
+    };
+    const bar = {
+      height: 30, width: 250,
+    };
+    svg.attr('width', svgSize.width).attr('height', svgSize.height);
+  </script>
+  <script src="js/outline.js"></script>
   <script src="js/mindnode.js"></script>
 </body>
 </html>

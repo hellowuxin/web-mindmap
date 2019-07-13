@@ -1,3 +1,6 @@
+svg {
+  display: inline-block;
+}
 #selectedNode > rect {
   fill-opacity: 0.2;
 }
