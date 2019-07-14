@@ -155,7 +155,7 @@ function drawMindnode(data) {
   let root = null;
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
   const nodeSize = { width: 250, height: 25 };
-  gOutPath.attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`)
+  gOutPath.attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`);
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const t = d3.transition().duration(dura).ease(d3.easePoly);
     d3.select(draggedNode).transition(t).attr('transform', `translate(${targetY},${targetX})`);
