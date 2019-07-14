@@ -1,77 +1,159 @@
-/* global d3 axios fontSize bar:true */
-/* eslint no-param-reassign: ["error", { "props": false }] */
-/*
-  全局变量：
-  data        ---json数据：name children
-  root        ---树状图数据：children data depth dx dy height nodeHeight nodeWidth parent x y
-  transition  ---过渡效果：duration ease
-  link        ---path路径生成器：x y
-  svg         ---可缩放矢量图形：width height viewbox
-  viewbox     ---定义在SVG视口中的位置和尺寸：x y width height
-  g           ---用来组合对象的容器：font-family font-size transform
-  gTransform  ---g相对svg的位移：left top
-----------------------------------------------------------------------------
-  局部变量：
-  r           ---root
-  d           ---data
-  n           ---NodeList
-  t           ---transition
-  del         ---delete
-  px/py       ---相对初始位置的平移量
-  dx/dy       ---相对父节点的坐标
-  x/y         ---相对根节点的坐标
-  subject     ---dragged subject
-----------------------------------------------------------------------------
-  function：
-  draggedNodeRenew(draggedNode, targetX, targetY, dura)
-              ---更新被拖拽节点的位置和连线
-  draggedNodeChildrenRenew(d, px, py)
-              ---更新被拖拽节点的子集中每个节点d的平移量(px,py)
-  isEqualJson(a, b)
-              ---比较Json数据a、b是否完全一样
-  delJson(d, del)
-              ---从d中删除del
-  addJson(data, dParent, d)
-              ---把d添加在dParent的children中，dParent被包含于data
-  insertJson(data, dPosition, d, i)
-              ---当i为0，把d插入到dPosition前面；当i为1，把d插入到dPosition后面，dPosition被包含于data
-  clicked()   ---点击事件
-  dragstarted()
-              ---拖拽开始时，记录相对父节点的坐标？？？提前准备好
-  dragged()   ---
-  dragended() ---
-  appendNode(enter)
-              ---添加圆点、文本、矩形框、连线
-  updateNode(update)
-              ---更新圆点、文本、矩形框、连线
-  removeNode(exit)
-              ---
-  tree(data)  ---根据data创建新的树布局，返回树状图数据root
-  gNodeNest(d)---根据数据d递归生成g
-  chart(d)    ---处理原生的json数据并开始生成图
-  addIdJSON(d, id)
-              ---给数据加上唯一id
-----------------------------------------------------------------------------
-  html标签：
-  path：id=path_xxx class=depth_x
-----------------------------------------------------------------------------
-  补充说明：
-  1、由于d3.hierarchy生成的树状图是纵向的，为了改成横向，使x代表纵坐标，y代表横坐标
-  2、svg中的标签顺序不能随意改变，由于selectAll，标签的顺序和data值存在关联
-*/
-function mindnode() {
+/* global d3 axios:true */
+/* eslint no-param-reassign: ['error', { 'props': false }] */
+const fontSize = 14;
+const nodeSize = { width: 250, height: 30 };
+const transition = d3.transition().duration(2000).ease(d3.easePoly);
+
+const svg = d3.select('svg');
+const svgSize = { width: 1300, height: 650 };
+svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
+
+const gOutline = d3.select('g#outline');
+const gOutlineSize = { width: 200, height: 0 };
+const gOutNode = gOutline.append('g');
+const gOutPath = gOutline.append('g').attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`);
+const outline = { rectFill: 'rgb(239, 239, 239)' };
+
+const gMindnode = d3.select('g#mindnode');
+
+function isEqualJSON(a, b) {
+  // 局限性：
+  // 如果对象里属性的位置发生变化，转换来的字符串就不相等，但实际我们只需要看他们的内容是否一致，与顺序没有关系，所以这种方法有局限性。
+  const aStr = JSON.stringify(a);
+  const bStr = JSON.stringify(b);
+  if (aStr === bStr) {
+    return true;
+  }
+  return false;
+}
+function delJSON(data, del) {
+  const dChildren = data.children;
+  if (dChildren) {
+    for (let index = 0; index < dChildren.length; index += 1) {
+      const dChild = dChildren[index];
+      const bool = isEqualJSON(dChild, del);
+      if (bool) {
+        dChildren.splice(index, 1);
+        return true;
+      }
+      if (delJSON(dChildren[index], del)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function addJSON(data, dParent, d) {
+  if (isEqualJSON(data, dParent)) {
+    data.children.push(d);
+    return true;
+  }
+  if (data.children) {
+    for (let index = 0; index < data.children.length; index += 1) {
+      const dataChildren = data.children[index];
+      const bool = isEqualJSON(dataChildren, dParent);
+      if (bool) {
+        if (!dataChildren.children) {
+          dataChildren.children = [];
+        }
+        dataChildren.children.push(d);
+        return true;
+      }
+      if (addJSON(dataChildren, dParent, d)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function insertJSON(data, dPosition, d, i) {
+  const dataChildren = data.children;
+  if (dataChildren) {
+    for (let index = 0; index < dataChildren.length; index += 1) {
+      const dataChild = dataChildren[index];
+      if (isEqualJSON(dataChild, dPosition)) {
+        dataChildren.splice(index + i, 0, d);
+        return true;
+      }
+      insertJSON(dataChild, dPosition, d, i);
+    }
+  }
+  return false;
+}
+function addIdJSON(data, id) {
+  data.id = id;
+  if (data.children) {
+    for (let index = 0; index < data.children.length; index += 1) {
+      addIdJSON(data.children[index], `${id}${index}`);
+    }
+  }
+}
+
+function drawOutline(data) {
+  function shapePath(d) {
+    const x0 = d.source.x;
+    const y0 = d.source.y;
+    const x1 = d.target.x;
+    const y1 = d.target.y;
+    return `M${y0},${x0}V${x1 - 4}Q${y0} ${x1} ${y1} ${x1}`;
+  }
+  function appendNode(enter) {
+    const gEnter = enter.append('g')
+      .attr('transform', d => `translate(0,${d.x})`);
+    gEnter.append('rect')
+      .attr('width', nodeSize.width)
+      .attr('height', nodeSize.height)
+      .style('fill', outline.rectFill);
+    gEnter.append('text')
+      .attr('dy', nodeSize.height / 1.5)
+      .attr('dx', fontSize)
+      .text(d => d.data.name)
+      .attr('transform', d => `translate(${d.y},${0})`);
+  }
+  function updateNode(update) {
+    console.log(update.nodes());
+  }
+  function appendPath(enter) {
+    enter.append('path', 'g')
+      .attr('fill', 'none')
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-width', 1.5)
+      .attr('stroke', '#555')
+      .attr('d', shapePath);
+  }
+  function updatePath(update) {
+    console.log(update.nodes());
+  }
+  function draw(r) {
+    let index = 0;
+    r.eachBefore((n) => { // 深度优先遍历
+      n.x = index * (nodeSize.height + 1);
+      n.y = n.depth * 8;
+      index += 1;
+    });
+
+    const rDescendants = r.descendants();
+    gOutlineSize.height = rDescendants.length * (nodeSize.height + 1);
+    gOutline.attr('height', gOutlineSize.height).attr('width', gOutlineSize.width);
+
+    gOutNode.selectAll('g')
+      .data(rDescendants)
+      .join(
+        enter => appendNode(enter),
+        update => updateNode(update),
+      );
+    gOutPath.selectAll('path')
+      .data(r.links())
+      .join(
+        enter => appendPath(enter),
+        update => updatePath(update),
+      );
+  }
+  draw(d3.hierarchy(data));
+}
+function drawMindnode(data) {
   let root = null;
-  const transition = d3.transition().duration(2000).ease(d3.easePoly);
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
-  const gMindnode = d3.select('g#mindnode');
-  gMindnode.attr('transform', `translate(${bar.width},${0})`);
-  const g = gMindnode.append('g').attr('font-size', fontSize);
-  const svgSize = {
-    width: 1300, height: 500,
-  };
-  const gTransform = {
-    left: 20, top: 0,
-  };
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const t = d3.transition().duration(dura).ease(d3.easePoly);
     d3.select(draggedNode).transition(t).attr('transform', `translate(${targetY},${targetX})`);
@@ -92,70 +174,6 @@ function mindnode() {
         draggedNodeChildrenRenew(dChild, px, py);
       }
     }
-  }
-  function isEqualJson(a, b) {
-    // 局限性：
-    // 如果对象里属性的位置发生变化，转换来的字符串就不相等，但实际我们只需要看他们的内容是否一致，与顺序没有关系，所以这种方法有局限性。
-    const aStr = JSON.stringify(a);
-    const bStr = JSON.stringify(b);
-    if (aStr === bStr) {
-      return true;
-    }
-    return false;
-  }
-  function delJson(d, del) {
-    const dChildren = d.children;
-    if (dChildren) {
-      for (let index = 0; index < dChildren.length; index += 1) {
-        const dChild = dChildren[index];
-        const bool = isEqualJson(dChild, del);
-        if (bool) {
-          dChildren.splice(index, 1);
-          return true;
-        }
-        if (delJson(dChildren[index], del)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  function addJson(data, dParent, d) {
-    if (isEqualJson(data, dParent)) {
-      data.children.push(d);
-      return true;
-    }
-    if (data.children) {
-      for (let index = 0; index < data.children.length; index += 1) {
-        const dataChildren = data.children[index];
-        const bool = isEqualJson(dataChildren, dParent);
-        if (bool) {
-          if (!dataChildren.children) {
-            dataChildren.children = [];
-          }
-          dataChildren.children.push(d);
-          return true;
-        }
-        if (addJson(dataChildren, dParent, d)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  function insertJson(data, dPosition, d, i) {
-    const dataChildren = data.children;
-    if (dataChildren) {
-      for (let index = 0; index < dataChildren.length; index += 1) {
-        const dataChild = dataChildren[index];
-        if (isEqualJson(dataChild, dPosition)) {
-          dataChildren.splice(index + i, 0, d);
-          return true;
-        }
-        insertJson(dataChild, dPosition, d, i);
-      }
-    }
-    return false;
   }
   function clicked() {
     d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
@@ -193,7 +211,7 @@ function mindnode() {
     const targetX = subject.dx + px;
     draggedNodeRenew(draggedNode, targetX, targetY, 0);
     // 重叠触发矩形边框
-    const gSelection = g.selectAll('g').filter((d, i, n) => !draggedNode.isSameNode(n[i]) && !draggedNode.parentNode.isSameNode(n[i]));
+    const gSelection = gMindnode.selectAll('g').filter((d, i, n) => !draggedNode.isSameNode(n[i]) && !draggedNode.parentNode.isSameNode(n[i]));
     gSelection.each((d, i, n) => {
       const gNode = n[i];
       const gRect = gNode.getElementsByTagName('rect')[0];
@@ -223,11 +241,11 @@ function mindnode() {
       newParentNode.getElementsByTagName('rect')[0].setAttribute('stroke-opacity', 0);
       d3.select(draggedNode).each((draggedD) => {
         d3.select(newParentNode).each((newParentD) => {
-          if (!delJson(root.data, draggedD.data)) {
-            console.log('delJson error!');
+          if (!delJSON(root.data, draggedD.data)) {
+            console.log('delJSON error!');
           }
-          if (!addJson(root.data, newParentD.data, draggedD.data)) {
-            console.log('addJson error!');
+          if (!addJSON(root.data, newParentD.data, draggedD.data)) {
+            console.log('addJSON error!');
           } else {
             draggedNode.parentNode.removeChild(draggedNode);
             // eslint-disable-next-line no-use-before-define
@@ -237,7 +255,7 @@ function mindnode() {
       });
     } else if (Math.abs(subject.px) > root.nodeHeight) { // 更新json数据顺序
       let draggedParentNode = draggedNode.parentNode;
-      if (!draggedParentNode.isEqualNode(g.nodes()[0])) {
+      if (!draggedParentNode.isEqualNode(gMindnode.nodes()[0])) {
         draggedParentNode = d3.select(draggedParentNode);
         draggedParentNode.each((d) => {
           const draggedBrotherNodes = draggedParentNode.selectAll(`g.depth_${d.depth + 1}`).filter((a, i, n) => !draggedNode.isSameNode(n[i]));
@@ -259,12 +277,12 @@ function mindnode() {
               }
             });
             if (a.b0 || a.b1) {
-              delJson(root.data, subject.data);
+              delJSON(root.data, subject.data);
               if (a.b0) {
-                insertJson(root.data, a.b0, subject.data, 0);
+                insertJSON(root.data, a.b0, subject.data, 0);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n0);
               } else if (a.b1) {
-                insertJson(root.data, a.b1, subject.data, 1);
+                insertJSON(root.data, a.b1, subject.data, 1);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
               }
               // eslint-disable-next-line no-use-before-define
@@ -363,7 +381,7 @@ function mindnode() {
   function tree(d) {
     const r = d3.hierarchy(d);// 根据指定的分层数据构造根节点
     r.nodeHeight = 25;
-    r.nodeWidth = (svgSize.width - bar.width) / (r.height + 1);// r.height与叶子节点的最大距离
+    r.nodeWidth = (svgSize.width - nodeSize.width) / (r.height + 1);// r.height与叶子节点的最大距离
     // nodeSize设置了节点的大小（高宽)
     // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
     return d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
@@ -383,14 +401,6 @@ function mindnode() {
         dChildren = [];
       }
       gNodeNest(dChildren, gNode.filter((a, i) => i === index));
-    }
-  }
-  function addIdJSON(d, id) {
-    d.id = id;
-    if (d.children) {
-      for (let index = 0; index < d.children.length; index += 1) {
-        addIdJSON(d.children[index], `${id}${index}`);
-      }
     }
   }
   function renewY(r, textWidth) {
@@ -414,9 +424,8 @@ function mindnode() {
       if (a.x > x1) x1 = a.x;// 求得最大，即最低点
       if (a.x < x0) x0 = a.x;// 求得最小，即最高点
     });
-    gTransform.top = root.nodeHeight - x0;
-    g.attr('transform', `translate(${gTransform.left},${gTransform.top})`);
-    gNodeNest([root], g);
+    gMindnode.attr('transform', `translate(${nodeSize.width + 20},${root.nodeHeight - x0})`);
+    gNodeNest([root], gMindnode);
   }
   function addTextWidth(d) {
     const hiddenSvg = d3.select('g#hidden');
@@ -429,11 +438,13 @@ function mindnode() {
       }
     }
   }
-  axios.get('/data').then((res) => {
-    const { data } = res;
-    addTextWidth(data);
-    addIdJSON(data, '0');
-    chart(data);
-  });
+  addTextWidth(data);
+  addIdJSON(data, '0');
+  chart(data);
 }
-mindnode();
+
+axios.get('/data').then((res) => {
+  const { data } = res;
+  drawOutline(data);
+  drawMindnode(data);
+});

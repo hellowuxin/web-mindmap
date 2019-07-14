@@ -3,7 +3,7 @@
 function outline() {
   let root = null;
   const gOutline = d3.select('g#outline');
-  const svgSize = {
+  const gOutlineSize = {
     height: 0, width: 200,
   };
   const gOutNode = gOutline.append('g').attr('font-size', fontSize);
@@ -45,8 +45,8 @@ function outline() {
   }
   function gNode(r) {
     const nodes = r.descendants();
-    svgSize.height = nodes.length * (bar.height + 1);
-    gOutline.attr('height', svgSize.height).attr('width', svgSize.width);
+    gOutlineSize.height = nodes.length * (bar.height + 1);
+    gOutline.attr('height', gOutlineSize.height).attr('width', gOutlineSize.width);
     let index = 0;
     r.eachBefore((n) => {
       n.x = index * (bar.height + 1);
