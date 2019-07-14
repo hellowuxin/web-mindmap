@@ -1,7 +1,6 @@
 /* global d3 axios:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 const fontSize = 14;
-const nodeSize = { width: 250, height: 30 };
 const transition = d3.transition().duration(2000).ease(d3.easePoly);
 
 const svg = d3.select('svg');
@@ -11,7 +10,7 @@ svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size'
 const gOutline = d3.select('g#outline');
 const gOutlineSize = { width: 200, height: 0 };
 const gOutNode = gOutline.append('g');
-const gOutPath = gOutline.append('g').attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`);
+const gOutPath = gOutline.append('g');
 const outline = { rectFill: 'rgb(239, 239, 239)' };
 
 const gMindnode = d3.select('g#mindnode');
@@ -90,6 +89,7 @@ function addIdJSON(data, id) {
 }
 
 function drawOutline(data) {
+  const nodeSize = { width: 250, height: 30 };
   function shapePath(d) {
     const x0 = d.source.x;
     const y0 = d.source.y;
@@ -154,6 +154,8 @@ function drawOutline(data) {
 function drawMindnode(data) {
   let root = null;
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
+  const nodeSize = { width: 250, height: 25 };
+  gOutPath.attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`)
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const t = d3.transition().duration(dura).ease(d3.easePoly);
     d3.select(draggedNode).transition(t).attr('transform', `translate(${targetY},${targetX})`);
@@ -380,7 +382,7 @@ function drawMindnode(data) {
   }
   function tree(d) {
     const r = d3.hierarchy(d);// 根据指定的分层数据构造根节点
-    r.nodeHeight = 25;
+    r.nodeHeight = nodeSize.height;
     r.nodeWidth = (svgSize.width - nodeSize.width) / (r.height + 1);// r.height与叶子节点的最大距离
     // nodeSize设置了节点的大小（高宽)
     // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
