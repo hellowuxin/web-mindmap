@@ -46,3 +46,8 @@
 * **renewY**(r, textWidth) - 根据textWidth更新数据y值
 * **chart**(d) - 处理数据d并开始绘制
 * **addTextWidth**(d) - 给数据d添加d.name在text中的宽度，方便后续绘制
+
+## 仍待开发的功能
+
+* mindnode和outline的联动
+* outline的编辑节点名称
