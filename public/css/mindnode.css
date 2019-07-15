@@ -4,6 +4,12 @@ svg {
 #selectedMindnode > rect {
   fill-opacity: 0.2;
 }
+#selectedOutnode > rect {
+  fill: rgb(204, 211, 253);
+}
+.outnode > rect {
+  fill: rgb(239, 239, 239);
+}
 #hidden {
   font-size: 14px;
   visibility: hidden;

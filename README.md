@@ -6,11 +6,13 @@
 
 * **r** - root
 * **d** - data
+* **n** - NodeList
 * **del** - delete
 * **px/py** - 相对初始位置的平移量
 * **dx/dy** - 相对父节点的坐标
 * **x/y** -  相对根节点的坐标
 * **dura** - duration
+* **sele** - select
 
 ## JSON数据处理
 
@@ -19,11 +21,18 @@
 * **addJSON**(data, dParent, d) - 在data中的dParent添加子数据d
 * **insertJSON**(data, dPosition, d, i) - 往data中插入数据d，根据i的值插入在dPosition之前/之后
 * **addIdJSON**(data, id) - 给数据data添加唯一标识id
+* **addTextWidth**(d) - 给数据d添加d.name在text中的宽度，方便后续绘制
+
+## 辅助函数
+
+* **seleOutNode**(id) - 
+* **seleMindNode**(g, id) - 
 
 ## Outline绘制
 
 * **drawOutline**(data) - 根据数据data绘制outline
 * **shapePath**(d) - 连线生成器
+* **clicked**() - 
 * **appendNode**(enter) - 添加节点
 * **updateNode**(update) - 更新节点
 * **appendPath**(enter) - 添加连线
@@ -35,8 +44,7 @@
 * **drawMindnode**(data) - 根据数据data绘制mindnode
 * **draggedNodeRenew**(draggedNode, targetX, targetY, dura) - 更新draggedNode的位置，dura设定了动画过渡的时间
 * **draggedNodeChildrenRenew**(d, px, py) - 更新数据d中的平移量px和py
-* **clicked**() - node的点击事件：选中node
-* **dragstarted**() - 拖拽开始时：选中node
+* **dragstarted**() - 拖拽开始时：选中node【同时也充当了click事件】
 * **dragged**() - 拖拽中：拖拽node
 * **dragended**() - 拖拽结束时：更新node
 * **appendNode**(enter) - 添加节点
@@ -45,9 +53,10 @@
 * **gNodeNest**(d, gParent) - 嵌套绘制Node和Path
 * **renewY**(r, textWidth) - 根据textWidth更新数据y值
 * **chart**(d) - 处理数据d并开始绘制
-* **addTextWidth**(d) - 给数据d添加d.name在text中的宽度，方便后续绘制
 
-## 仍待开发的功能
+## 仍待开发
 
+* 面向过程转面向对象
 * mindnode和outline的联动
-* outline的编辑节点名称
+* outline的节点名称编辑
+* 对递归函数进行优化

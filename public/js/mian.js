@@ -2,7 +2,6 @@
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 const fontSize = 14;
 const transition = d3.transition().duration(1000).ease(d3.easePoly);
-const seleFill = 'rgb(204, 211, 253)';
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
@@ -11,9 +10,9 @@ const gOutline = d3.select('g#outline');
 const gOutlineSize = { width: 200, height: 0 };
 const gOutNode = gOutline.append('g');
 const gOutPath = gOutline.append('g');
-const outline = { rectFill: 'rgb(239, 239, 239)' };
 
 const gMindnode = d3.select('g#mindnode');
+const gMindnodeSize = { width: svgSize.width - gOutlineSize.width - 20 };
 
 function isEqualJSON(a, b) {
   // 局限性：
@@ -87,14 +86,38 @@ function addIdJSON(data, id) {
     }
   }
 }
+function addTextWidth(d) {
+  const hiddenSvg = d3.select('g#hidden');
+  const text = hiddenSvg.append('text').text(d.name).nodes()[0];
+  d.textWidth = text.getBBox().width;
+  if (d.children) {
+    for (let index = 0; index < d.children.length; index += 1) {
+      const dChild = d.children[index];
+      addTextWidth(dChild);
+    }
+  }
+}
 
 function seleOutNode(id) {
-  gOutNode.selectAll('g').filter(d => d.data.id === id)
-    .select('rect')
-    .attr('fill', seleFill);
-  gOutNode.selectAll('g').filter(d => d.data.id !== id)
-    .select('rect')
-    .attr('fill', outline.rectFill);
+  const gList = gOutNode.selectAll('g');
+  gList.filter(d => d.data.id === id).attr('id', 'selectedOutnode');
+  gList.filter(d => d.data.id !== id).attr('id', '');
+}
+function seleMindNode(g, id) {
+  const gList = g.selectAll('g');
+  const sele = gList.filter(d => d.data.id === id);
+  if (sele) {
+    sele.attr('id', 'selectedMindnode');
+    return true;
+  }
+  const gNode = gList.nodes();
+  for (let index = 0; index < gNode.length; index += 1) {
+    const gChild = gNode[index];
+    if (seleMindNode(gChild, id)) {
+      return true;
+    }
+  }
+  return false;
 }
 function drawOutline(data) {
   const nodeSize = { width: gOutlineSize.width, height: 30 };
@@ -106,13 +129,37 @@ function drawOutline(data) {
     const y1 = d.target.y;
     return `M${y0},${x0}V${x1 - 4}Q${y0} ${x1} ${y1} ${x1}`;
   }
+  function clicked() {
+    d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
+    // 选中selectedOutnode
+    let clickedNode = this;
+    clickedNode = d3.select(clickedNode);
+    clickedNode.attr('id', 'selectedOutnode');
+    gOutNode.selectAll('g').filter((d, i, n) => !n[i].isSameNode(this)).attr('id', '');
+    // 选中selectedMindnode
+    clickedNode.each((d) => {
+      const { id } = d.data;
+      const selected = d3.select('g#selectedMindnode');
+      if (selected.nodes()[0]) {
+        selected.each((a) => {
+          if (a.data.id !== id) {
+            selected.attr('id', '');
+            seleMindNode(gMindnode, id);
+          }
+        });
+      } else {
+        seleMindNode(gMindnode, id);
+      }
+    });
+  }
   function appendNode(enter) {
     const gEnter = enter.append('g')
-      .attr('transform', d => `translate(0,${d.x})`);
+      .attr('class', 'outnode')
+      .attr('transform', d => `translate(0,${d.x})`)
+      .on('click', clicked);
     gEnter.append('rect')
       .attr('width', nodeSize.width)
-      .attr('height', nodeSize.height)
-      .attr('fill', outline.rectFill);
+      .attr('height', nodeSize.height);
     gEnter.append('text')
       .attr('dy', nodeSize.height / 1.5)
       .attr('dx', fontSize * 3 / 2)
@@ -250,6 +297,7 @@ function drawMindnode(data) {
             // eslint-disable-next-line no-use-before-define
             chart(data);
             drawOutline(data);
+            d3.select(draggedNode).each(d => seleOutNode(d.data.id));
           }
         });
       });
@@ -282,10 +330,12 @@ function drawMindnode(data) {
                 insertJSON(data, a.b0, subject.data, 0);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n0);
                 drawOutline(data);
+                d3.select(draggedNode).each(p => seleOutNode(p.data.id));
               } else if (a.b1) {
                 insertJSON(data, a.b1, subject.data, 1);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
                 drawOutline(data);
+                d3.select(draggedNode).each(p => seleOutNode(p.data.id));
               }
               // eslint-disable-next-line no-use-before-define
               chart(data);
@@ -383,7 +433,7 @@ function drawMindnode(data) {
   function tree(d) {
     const r = d3.hierarchy(d);// 根据指定的分层数据构造根节点
     r.nodeHeight = nodeSize.height;
-    r.nodeWidth = (svgSize.width - gOutlineSize.width - 20) / (r.height + 1);// r.height与叶子节点的最大距离
+    r.nodeWidth = gMindnodeSize.width / (r.height + 1);// r.height与叶子节点的最大距离
     // nodeSize设置了节点的大小（高宽)
     // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
     return d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
@@ -429,24 +479,13 @@ function drawMindnode(data) {
     gMindnode.attr('transform', `translate(${gOutlineSize.width + 20},${root.nodeHeight - x0})`);
     gNodeNest([root], gMindnode);
   }
-  function addTextWidth(d) {
-    const hiddenSvg = d3.select('g#hidden');
-    const text = hiddenSvg.append('text').text(d.name).nodes()[0];
-    d.textWidth = text.getBBox().width;
-    if (d.children) {
-      for (let index = 0; index < d.children.length; index += 1) {
-        const dChild = d.children[index];
-        addTextWidth(dChild);
-      }
-    }
-  }
-  addTextWidth(data);
   chart(data);
 }
 
 axios.get('/data').then((res) => {
   const { data } = res;
   addIdJSON(data, '0');
+  addTextWidth(data);
   drawOutline(data);
   drawMindnode(data);
 });
