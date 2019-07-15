@@ -1,8 +1,8 @@
 /* global d3 axios:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 const fontSize = 14;
-const transition = d3.transition().duration(2000).ease(d3.easePoly);
-
+const transition = d3.transition().duration(1000).ease(d3.easePoly);
+const seleFill = 'rgb(204, 211, 253)';
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
@@ -88,8 +88,17 @@ function addIdJSON(data, id) {
   }
 }
 
+function seleOutNode(id) {
+  gOutNode.selectAll('g').filter(d => d.data.id === id)
+    .select('rect')
+    .attr('fill', seleFill);
+  gOutNode.selectAll('g').filter(d => d.data.id !== id)
+    .select('rect')
+    .attr('fill', outline.rectFill);
+}
 function drawOutline(data) {
-  const nodeSize = { width: 250, height: 30 };
+  const nodeSize = { width: gOutlineSize.width, height: 30 };
+  gOutPath.attr('transform', `translate(${fontSize},${nodeSize.height / 2})`);
   function shapePath(d) {
     const x0 = d.source.x;
     const y0 = d.source.y;
@@ -103,15 +112,16 @@ function drawOutline(data) {
     gEnter.append('rect')
       .attr('width', nodeSize.width)
       .attr('height', nodeSize.height)
-      .style('fill', outline.rectFill);
+      .attr('fill', outline.rectFill);
     gEnter.append('text')
       .attr('dy', nodeSize.height / 1.5)
-      .attr('dx', fontSize)
+      .attr('dx', fontSize * 3 / 2)
       .text(d => d.data.name)
       .attr('transform', d => `translate(${d.y},${0})`);
   }
   function updateNode(update) {
-    console.log(update.nodes());
+    update.transition(transition).attr('transform', d => `translate(0,${d.x})`);
+    update.select('text').text(d => d.data.name).attr('transform', d => `translate(${d.y},${0})`);
   }
   function appendPath(enter) {
     enter.append('path', 'g')
@@ -122,7 +132,7 @@ function drawOutline(data) {
       .attr('d', shapePath);
   }
   function updatePath(update) {
-    console.log(update.nodes());
+    update.transition(transition).attr('d', shapePath);
   }
   function draw(r) {
     let index = 0;
@@ -135,7 +145,6 @@ function drawOutline(data) {
     const rDescendants = r.descendants();
     gOutlineSize.height = rDescendants.length * (nodeSize.height + 1);
     gOutline.attr('height', gOutlineSize.height).attr('width', gOutlineSize.width);
-
     gOutNode.selectAll('g')
       .data(rDescendants)
       .join(
@@ -154,14 +163,13 @@ function drawOutline(data) {
 function drawMindnode(data) {
   let root = null;
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
-  const nodeSize = { width: 250, height: 25 };
-  gOutPath.attr('transform', `translate(${fontSize / 2},${nodeSize.height / 2})`);
+  const nodeSize = { width: 200, height: 25 };
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
-    const t = d3.transition().duration(dura).ease(d3.easePoly);
-    d3.select(draggedNode).transition(t).attr('transform', `translate(${targetY},${targetX})`);
+    const tran = d3.transition().duration(dura).ease(d3.easePoly);
+    d3.select(draggedNode).transition(tran).attr('transform', `translate(${targetY},${targetX})`);
     // 更新draggedNode与父节点的path
     d3.select(draggedNode).each((d) => {
-      d3.select(`path#path_${d.data.id}`).transition(t).attr('d', `${link({
+      d3.select(`path#path_${d.data.id}`).transition(tran).attr('d', `${link({
         source: [-targetY + (d.parent ? d.parent.data.textWidth : 0), -targetX],
         target: [0, 0],
       })}L${d.data.textWidth},0`);
@@ -177,29 +185,18 @@ function drawMindnode(data) {
       }
     }
   }
-  function clicked() {
-    d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
-    const clickedNode = this;
-    const selectedNode = document.getElementById('selectedNode');
-    if (selectedNode) {
-      if (!selectedNode.isSameNode(clickedNode)) {
-        selectedNode.removeAttribute('id');
-        clickedNode.setAttribute('id', 'selectedNode');
-      }
-    } else {
-      clickedNode.setAttribute('id', 'selectedNode');
-    }
-  }
   function dragstarted() {
     const draggedNode = this;
-    const selectedNode = document.getElementById('selectedNode');
-    if (selectedNode) {
-      if (!selectedNode.isSameNode(draggedNode)) {
-        selectedNode.removeAttribute('id');
-        draggedNode.setAttribute('id', 'selectedNode');
+    const selectedMindnode = document.getElementById('selectedMindnode');
+    if (selectedMindnode) {
+      if (!selectedMindnode.isSameNode(draggedNode)) {
+        selectedMindnode.removeAttribute('id');
+        draggedNode.setAttribute('id', 'selectedMindnode');
+        d3.select(draggedNode).each(d => seleOutNode(d.data.id));
       }
     } else {
-      draggedNode.setAttribute('id', 'selectedNode');
+      draggedNode.setAttribute('id', 'selectedMindnode');
+      d3.select(draggedNode).each(d => seleOutNode(d.data.id));
     }
   }
   function dragged() {
@@ -243,21 +240,22 @@ function drawMindnode(data) {
       newParentNode.getElementsByTagName('rect')[0].setAttribute('stroke-opacity', 0);
       d3.select(draggedNode).each((draggedD) => {
         d3.select(newParentNode).each((newParentD) => {
-          if (!delJSON(root.data, draggedD.data)) {
+          if (!delJSON(data, draggedD.data)) {
             console.log('delJSON error!');
           }
-          if (!addJSON(root.data, newParentD.data, draggedD.data)) {
+          if (!addJSON(data, newParentD.data, draggedD.data)) {
             console.log('addJSON error!');
           } else {
             draggedNode.parentNode.removeChild(draggedNode);
             // eslint-disable-next-line no-use-before-define
-            chart(root.data);
+            chart(data);
+            drawOutline(data);
           }
         });
       });
     } else if (Math.abs(subject.px) > root.nodeHeight) { // 更新json数据顺序
       let draggedParentNode = draggedNode.parentNode;
-      if (!draggedParentNode.isEqualNode(gMindnode.nodes()[0])) {
+      if (!draggedParentNode.isEqualNode(gMindnode.nodes()[0])) { // 拖拽非根节点时
         draggedParentNode = d3.select(draggedParentNode);
         draggedParentNode.each((d) => {
           const draggedBrotherNodes = draggedParentNode.selectAll(`g.depth_${d.depth + 1}`).filter((a, i, n) => !draggedNode.isSameNode(n[i]));
@@ -279,16 +277,18 @@ function drawMindnode(data) {
               }
             });
             if (a.b0 || a.b1) {
-              delJSON(root.data, subject.data);
+              delJSON(data, subject.data);
               if (a.b0) {
-                insertJSON(root.data, a.b0, subject.data, 0);
+                insertJSON(data, a.b0, subject.data, 0);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n0);
+                drawOutline(data);
               } else if (a.b1) {
-                insertJSON(root.data, a.b1, subject.data, 1);
+                insertJSON(data, a.b1, subject.data, 1);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
+                drawOutline(data);
               }
               // eslint-disable-next-line no-use-before-define
-              chart(root.data);
+              chart(data);
             } else {
               draggedNodeChildrenRenew(subject, 0, 0);
               draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
@@ -298,7 +298,7 @@ function drawMindnode(data) {
             draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
           }
         });
-      } else {
+      } else { // 拖拽根节点时直接复原
         draggedNodeChildrenRenew(subject, 0, 0);
         draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
       }
@@ -383,7 +383,7 @@ function drawMindnode(data) {
   function tree(d) {
     const r = d3.hierarchy(d);// 根据指定的分层数据构造根节点
     r.nodeHeight = nodeSize.height;
-    r.nodeWidth = (svgSize.width - nodeSize.width) / (r.height + 1);// r.height与叶子节点的最大距离
+    r.nodeWidth = (svgSize.width - gOutlineSize.width - 20) / (r.height + 1);// r.height与叶子节点的最大距离
     // nodeSize设置了节点的大小（高宽)
     // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
     return d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
@@ -395,7 +395,7 @@ function drawMindnode(data) {
         enter => appendNode(enter),
         update => updateNode(update),
       );
-    gNode.on('click', clicked).call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
+    gNode.call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
 
     for (let index = 0; index < d.length; index += 1) {
       let dChildren = d[index].children;
@@ -426,7 +426,7 @@ function drawMindnode(data) {
       if (a.x > x1) x1 = a.x;// 求得最大，即最低点
       if (a.x < x0) x0 = a.x;// 求得最小，即最高点
     });
-    gMindnode.attr('transform', `translate(${nodeSize.width + 20},${root.nodeHeight - x0})`);
+    gMindnode.attr('transform', `translate(${gOutlineSize.width + 20},${root.nodeHeight - x0})`);
     gNodeNest([root], gMindnode);
   }
   function addTextWidth(d) {
@@ -441,12 +441,12 @@ function drawMindnode(data) {
     }
   }
   addTextWidth(data);
-  addIdJSON(data, '0');
   chart(data);
 }
 
 axios.get('/data').then((res) => {
   const { data } = res;
+  addIdJSON(data, '0');
   drawOutline(data);
   drawMindnode(data);
 });
