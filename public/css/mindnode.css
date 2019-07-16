@@ -10,6 +10,12 @@ svg {
 .outnode > rect {
   fill: rgb(239, 239, 239);
 }
+foreignObject {
+  padding: 5px;
+}
+foreignObject p {
+  margin: 0;
+}
 #hidden {
   font-size: 14px;
   visibility: hidden;

@@ -5,6 +5,7 @@ const transition = d3.transition().duration(1000).ease(d3.easePoly);
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
+let checkEditTimer = null;// 计时器
 
 const gOutline = d3.select('g#outline');
 const gOutlineSize = { width: 200, height: 0 };
@@ -122,6 +123,21 @@ function seleMindNode(g, id) {
 function drawOutline(data) {
   const nodeSize = { width: gOutlineSize.width, height: 30 };
   gOutPath.attr('transform', `translate(${fontSize},${nodeSize.height / 2})`);
+  function checkEditFocus() {
+    const editP = document.querySelector('#editing p');
+    if (document.activeElement !== editP) {
+      clearInterval(checkEditTimer);
+      const editText = editP.innerHTML;
+      d3.select('g#editing').each((d) => {
+        if (d.data.name !== editText) {
+          d.data.name = editText;
+          addTextWidth(data);
+          // eslint-disable-next-line no-use-before-define
+          drawMindnode(data);
+        }
+      });
+    }
+  }
   function shapePath(d) {
     const x0 = d.source.x;
     const y0 = d.source.y;
@@ -131,26 +147,46 @@ function drawOutline(data) {
   }
   function clicked() {
     d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
-    // 选中selectedOutnode
-    let clickedNode = this;
-    clickedNode = d3.select(clickedNode);
-    clickedNode.attr('id', 'selectedOutnode');
-    gOutNode.selectAll('g').filter((d, i, n) => !n[i].isSameNode(this)).attr('id', '');
-    // 选中selectedMindnode
-    clickedNode.each((d) => {
-      const { id } = d.data;
-      const selected = d3.select('g#selectedMindnode');
-      if (selected.nodes()[0]) {
-        selected.each((a) => {
-          if (a.data.id !== id) {
-            selected.attr('id', '');
-            seleMindNode(gMindnode, id);
-          }
-        });
-      } else {
-        seleMindNode(gMindnode, id);
+    let sele = document.getElementById('selectedOutnode');
+    const edit = document.getElementById('editing');
+    const clickedNode = this;
+    if (clickedNode.isSameNode(edit)) { // 正在编辑
+      return;
+    }
+    if (edit) {
+      edit.removeAttribute('id');
+      d3.select(edit).select('p').attr('contenteditable', false);
+    }
+    if (clickedNode.isSameNode(sele)) { // 进入编辑状态
+      sele.setAttribute('id', 'editing');
+      d3.select(sele).select('p').attr('contenteditable', true);
+      document.querySelector('#editing p').focus();
+      document.execCommand('selectAll', false);
+      checkEditTimer = setInterval(checkEditFocus, 300);
+    } else {
+      if (sele) {
+        sele.removeAttribute('id');
+        d3.select(sele).select('p').attr('contenteditable', false);
       }
-    });
+      // 选中selectedOutnode
+      sele = d3.select(clickedNode);
+      sele.attr('id', 'selectedOutnode');
+      // 选中selectedMindnode
+      sele.each((d) => {
+        const { id } = d.data;
+        const seleMind = d3.select('g#selectedMindnode');
+        if (seleMind.nodes()[0]) {
+          seleMind.each((a) => {
+            if (a.data.id !== id) {
+              seleMind.attr('id', '');
+              seleMindNode(gMindnode, id);
+            }
+          });
+        } else {
+          seleMindNode(gMindnode, id);
+        }
+      });
+    }
   }
   function appendNode(enter) {
     const gEnter = enter.append('g')
@@ -160,15 +196,18 @@ function drawOutline(data) {
     gEnter.append('rect')
       .attr('width', nodeSize.width)
       .attr('height', nodeSize.height);
-    gEnter.append('text')
-      .attr('dy', nodeSize.height / 1.5)
-      .attr('dx', fontSize * 3 / 2)
-      .text(d => d.data.name)
-      .attr('transform', d => `translate(${d.y},${0})`);
+    const transX = fontSize * 3 / 2;
+    const foreign = gEnter.append('foreignObject')
+      .attr('width', d => (nodeSize.width - d.y - transX))
+      .attr('height', nodeSize.height)
+      .attr('transform', d => `translate(${d.y + transX},${0})`);
+    foreign.append('xhtml:p')
+      .attr('contenteditable', false)
+      .text(d => d.data.name);
   }
   function updateNode(update) {
     update.transition(transition).attr('transform', d => `translate(0,${d.x})`);
-    update.select('text').text(d => d.data.name).attr('transform', d => `translate(${d.y},${0})`);
+    update.select('p').text(d => d.data.name);
   }
   function appendPath(enter) {
     enter.append('path', 'g')
@@ -412,11 +451,12 @@ function drawMindnode(data) {
     update.attr('class', d => `depth_${d.depth}`)
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
-    const updateNodes = update.nodes();
-    update.each((d, i) => {
-      d3.select(updateNodes[i]).select('rect')
-        .attr('class', `depth_${d.depth}`);
-      d3.select(updateNodes[i]).select('path')
+    update.each((d, i, n) => {
+      d3.select(n[i]).selectAll(`text.depth_${d.depth}`).text(d.data.name);
+      d3.select(n[i]).select('rect')
+        .attr('class', `depth_${d.depth}`)
+        .attr('width', d.data.textWidth + 8);
+      d3.select(n[i]).select('path')
         .attr('id', `path_${d.data.id}`)
         .attr('class', `depth_${d.depth}`)
         .transition(transition)
