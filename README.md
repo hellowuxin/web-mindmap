@@ -25,14 +25,15 @@
 
 ## 辅助函数
 
-* **seleOutNode**(id) - 
-* **seleMindNode**(g, id) - 
+* **seleOutNode**(id) - 选中对应数据id的节点
+* **seleMindNode**(g, id) - 递归查找并选中对应数据id的节点
 
 ## Outline绘制
 
 * **drawOutline**(data) - 根据数据data绘制outline
+* **checkEditFocus**() - 当正在编辑的节点不再focus时，根据数据更新图
 * **shapePath**(d) - 连线生成器
-* **clicked**() - 
+* **clicked**() - 点击事件
 * **appendNode**(enter) - 添加节点
 * **updateNode**(update) - 更新节点
 * **appendPath**(enter) - 添加连线
@@ -58,5 +59,4 @@
 
 * 面向过程转面向对象
 * mindnode和outline的联动
-* outline的节点名称编辑
 * 对递归函数进行优化
