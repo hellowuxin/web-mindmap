@@ -1,5 +1,6 @@
 /* global d3 axios:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
+let dataJSON = null;
 const fontSize = 14;
 const transition = d3.transition().duration(1000).ease(d3.easePoly);
 const svg = d3.select('svg');
@@ -35,7 +36,7 @@ function delJSON(data, del) {
         dChildren.splice(index, 1);
         return true;
       }
-      if (delJSON(dChildren[index], del)) {
+      if (delJSON(dChild, del)) {
         return true;
       }
     }
@@ -120,24 +121,26 @@ function seleMindNode(g, id) {
   }
   return false;
 }
+function checkEditFocus() {
+  const editP = document.querySelector('#editing p');
+  if (document.activeElement !== editP) {
+    clearInterval(checkEditTimer);
+    const editText = editP.innerHTML;
+    d3.select('g#editing').each((d) => {
+      if (d.data.name !== editText) {
+        d.data.name = editText;
+        addTextWidth(dataJSON);
+        // eslint-disable-next-line no-use-before-define
+        drawOutline(dataJSON);
+        // eslint-disable-next-line no-use-before-define
+        drawMindnode(dataJSON);
+      }
+    });
+  }
+}
 function drawOutline(data) {
   const nodeSize = { width: gOutlineSize.width, height: 30 };
   gOutPath.attr('transform', `translate(${fontSize},${nodeSize.height / 2})`);
-  function checkEditFocus() {
-    const editP = document.querySelector('#editing p');
-    if (document.activeElement !== editP) {
-      clearInterval(checkEditTimer);
-      const editText = editP.innerHTML;
-      d3.select('g#editing').each((d) => {
-        if (d.data.name !== editText) {
-          d.data.name = editText;
-          addTextWidth(data);
-          // eslint-disable-next-line no-use-before-define
-          drawMindnode(data);
-        }
-      });
-    }
-  }
   function shapePath(d) {
     const x0 = d.source.x;
     const y0 = d.source.y;
@@ -271,22 +274,56 @@ function drawMindnode(data) {
       }
     }
   }
-  function dragstarted() {
-    const draggedNode = this;
-    const selectedMindnode = document.getElementById('selectedMindnode');
-    if (selectedMindnode) {
-      if (!selectedMindnode.isSameNode(draggedNode)) {
-        selectedMindnode.removeAttribute('id');
-        draggedNode.setAttribute('id', 'selectedMindnode');
-        d3.select(draggedNode).each(d => seleOutNode(d.data.id));
-      }
+  function clicked() {
+    d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
+    let sele = document.getElementById('selectedMindnode');
+    const edit = document.getElementById('editing');
+    const clickedNode = this;
+    if (clickedNode.isSameNode(edit)) { // 正在编辑
+      return;
+    }
+    if (edit) {
+      edit.removeAttribute('id');
+      d3.select(edit).select('p').attr('contenteditable', false);
+    }
+    if (clickedNode.isSameNode(sele)) { // 进入编辑状态
+      sele.setAttribute('id', 'editing');
+      d3.select(sele).select('p').attr('contenteditable', true);
+      document.querySelector('#editing p').focus();
+      document.execCommand('selectAll', false);
+      checkEditTimer = setInterval(checkEditFocus, 300);
     } else {
-      draggedNode.setAttribute('id', 'selectedMindnode');
-      d3.select(draggedNode).each(d => seleOutNode(d.data.id));
+      if (sele) {
+        sele.removeAttribute('id');
+        d3.select(sele).select('p').attr('contenteditable', false);
+      }
+      // 选中selectedOutnode
+      sele = d3.select(clickedNode);
+      sele.attr('id', 'selectedOutnode');
+      // 选中selectedMindnode
+      sele.each((d) => {
+        const { id } = d.data;
+        const seleMind = d3.select('g#selectedMindnode');
+        if (seleMind.nodes()[0]) {
+          seleMind.each((a) => {
+            if (a.data.id !== id) {
+              seleMind.attr('id', '');
+              seleMindNode(gMindnode, id);
+            }
+          });
+        } else {
+          seleMindNode(gMindnode, id);
+        }
+      });
     }
   }
   function dragged() {
     const draggedNode = this;
+    const selectedNode = document.getElementById('selectedMindnode');
+    if (selectedNode && selectedNode.isSameNode(draggedNode)) {
+      selectedNode.removeAttribute('id');
+    }
+    draggedNode.setAttribute('id', 'selectedMindnode');
     const { subject } = d3.event;
     const py = d3.event.x - subject.x;
     const px = d3.event.y - subject.y;
@@ -403,14 +440,21 @@ function drawMindnode(data) {
       .attr('stroke-width', 3)
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
-    gNode.append('text')
-      .attr('class', d => `depth_${d.depth}`)
-      .attr('dy', -5)
-      .text(d => d.data.name)
-      .clone(true)
-      .lower()
-      .attr('stroke', 'white')
-      .attr('class', d => `depth_${d.depth} back`);
+    const foreign = gNode.append('foreignObject')
+      .attr('width', d => d.data.textWidth + 11)
+      .attr('height', 30)
+      .attr('transform', `translate(${-5},${-24})`);
+    foreign.append('xhtml:p')
+      .attr('contenteditable', false)
+      .text(d => d.data.name);
+    // gNode.append('text')
+    //   .attr('class', d => `depth_${d.depth}`)
+    //   .attr('dy', -5)
+    //   .text(d => d.data.name)
+    //   .clone(true)
+    //   .lower()
+    //   .attr('stroke', 'white')
+    //   .attr('class', d => `depth_${d.depth} back`);
     gNode.append('rect')
       .attr('class', d => `depth_${d.depth}`)
       .attr('y', -17 - 4)
@@ -452,7 +496,8 @@ function drawMindnode(data) {
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
-      d3.select(n[i]).selectAll(`text.depth_${d.depth}`).text(d.data.name);
+      // d3.select(n[i]).selectAll(`text.depth_${d.depth}`).text(d.data.name);
+      d3.select(n[i]).select('p').text(d.data.name);
       d3.select(n[i]).select('rect')
         .attr('class', `depth_${d.depth}`)
         .attr('width', d.data.textWidth + 8);
@@ -485,7 +530,8 @@ function drawMindnode(data) {
         enter => appendNode(enter),
         update => updateNode(update),
       );
-    gNode.call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
+    gNode.on('click', clicked)
+      .call(d3.drag().on('drag', dragged).on('end', dragended));
 
     for (let index = 0; index < d.length; index += 1) {
       let dChildren = d[index].children;
@@ -523,9 +569,9 @@ function drawMindnode(data) {
 }
 
 axios.get('/data').then((res) => {
-  const { data } = res;
-  addIdJSON(data, '0');
-  addTextWidth(data);
-  drawOutline(data);
-  drawMindnode(data);
+  dataJSON = res.data;
+  addIdJSON(dataJSON, '0');
+  addTextWidth(dataJSON);
+  drawOutline(dataJSON);
+  drawMindnode(dataJSON);
 });
