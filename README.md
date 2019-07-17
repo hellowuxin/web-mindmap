@@ -60,3 +60,4 @@
 * 面向过程转面向对象
 * mindnode和outline的联动
 * 对递归函数进行优化
+* 如何区分dragStart 和 click
