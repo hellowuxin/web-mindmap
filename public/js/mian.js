@@ -1,4 +1,4 @@
-/* global d3 axios:true */
+/* global d3 axios DataJSON:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 let dataJSON = null;
 const fontSize = 14;
@@ -16,78 +16,6 @@ const gOutPath = gOutline.append('g');
 const gMindnode = d3.select('g#mindnode');
 const gMindnodeSize = { width: svgSize.width - gOutlineSize.width - 20 };
 
-function isEqualJSON(a, b) {
-  // 局限性：
-  // 如果对象里属性的位置发生变化，转换来的字符串就不相等，但实际我们只需要看他们的内容是否一致，与顺序没有关系，所以这种方法有局限性。
-  const aStr = JSON.stringify(a);
-  const bStr = JSON.stringify(b);
-  if (aStr === bStr) {
-    return true;
-  }
-  return false;
-}
-function delJSON(data, del) {
-  const dChildren = data.children;
-  if (dChildren) {
-    for (let index = 0; index < dChildren.length; index += 1) {
-      const dChild = dChildren[index];
-      const bool = isEqualJSON(dChild, del);
-      if (bool) {
-        dChildren.splice(index, 1);
-        return true;
-      }
-      if (delJSON(dChild, del)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-function addJSON(data, dParent, d) {
-  if (isEqualJSON(data, dParent)) {
-    data.children.push(d);
-    return true;
-  }
-  if (data.children) {
-    for (let index = 0; index < data.children.length; index += 1) {
-      const dataChildren = data.children[index];
-      const bool = isEqualJSON(dataChildren, dParent);
-      if (bool) {
-        if (!dataChildren.children) {
-          dataChildren.children = [];
-        }
-        dataChildren.children.push(d);
-        return true;
-      }
-      if (addJSON(dataChildren, dParent, d)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-function insertJSON(data, dPosition, d, i) {
-  const dataChildren = data.children;
-  if (dataChildren) {
-    for (let index = 0; index < dataChildren.length; index += 1) {
-      const dataChild = dataChildren[index];
-      if (isEqualJSON(dataChild, dPosition)) {
-        dataChildren.splice(index + i, 0, d);
-        return true;
-      }
-      insertJSON(dataChild, dPosition, d, i);
-    }
-  }
-  return false;
-}
-function addIdJSON(data, id) {
-  data.id = id;
-  if (data.children) {
-    for (let index = 0; index < data.children.length; index += 1) {
-      addIdJSON(data.children[index], `${id}${index}`);
-    }
-  }
-}
 function addTextWidth(d) {
   const hiddenSvg = d3.select('g#hidden');
   const text = hiddenSvg.append('text').text(d.name).nodes()[0];
@@ -99,7 +27,6 @@ function addTextWidth(d) {
     }
   }
 }
-
 function seleOutNode(id) {
   const gList = gOutNode.selectAll('g');
   gList.filter(d => d.data.id === id).attr('id', 'selectedOutnode');
@@ -129,7 +56,7 @@ function checkEditFocus() {
     d3.select('g#editing').each((d) => {
       if (d.data.name !== editText) {
         d.data.name = editText;
-        addTextWidth(dataJSON);
+        addTextWidth(dataJSON.data);
         // eslint-disable-next-line no-use-before-define
         drawOutline(dataJSON);
         // eslint-disable-next-line no-use-before-define
@@ -138,7 +65,7 @@ function checkEditFocus() {
     });
   }
 }
-function drawOutline(data) {
+function drawOutline(dJSON) {
   const nodeSize = { width: gOutlineSize.width, height: 30 };
   gOutPath.attr('transform', `translate(${fontSize},${nodeSize.height / 2})`);
   function shapePath(d) {
@@ -247,9 +174,10 @@ function drawOutline(data) {
         update => updatePath(update),
       );
   }
-  draw(d3.hierarchy(data));
+  dJSON.addId();
+  draw(d3.hierarchy(dJSON.data[0]));
 }
-function drawMindnode(data) {
+function drawMindnode(dJSON) {
   let root = null;
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
   const nodeSize = { width: 200, height: 25 };
@@ -363,16 +291,16 @@ function drawMindnode(data) {
       newParentNode.getElementsByTagName('rect')[0].setAttribute('stroke-opacity', 0);
       d3.select(draggedNode).each((draggedD) => {
         d3.select(newParentNode).each((newParentD) => {
-          if (!delJSON(data, draggedD.data)) {
+          if (!dJSON.del(draggedD.data)) {
             console.log('delJSON error!');
           }
-          if (!addJSON(data, newParentD.data, draggedD.data)) {
+          if (!dJSON.add(newParentD.data, draggedD.data)) {
             console.log('addJSON error!');
           } else {
             draggedNode.parentNode.removeChild(draggedNode);
             // eslint-disable-next-line no-use-before-define
-            chart(data);
-            drawOutline(data);
+            chart(dJSON);
+            drawOutline(dJSON);
             d3.select(draggedNode).each(d => seleOutNode(d.data.id));
           }
         });
@@ -401,20 +329,20 @@ function drawMindnode(data) {
               }
             });
             if (a.b0 || a.b1) {
-              delJSON(data, subject.data);
+              dJSON.del(subject.data);
               if (a.b0) {
-                insertJSON(data, a.b0, subject.data, 0);
+                dJSON.insert(a.b0, subject.data);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n0);
-                drawOutline(data);
+                drawOutline(dJSON);
                 d3.select(draggedNode).each(p => seleOutNode(p.data.id));
               } else if (a.b1) {
-                insertJSON(data, a.b1, subject.data, 1);
+                dJSON.insert(a.b1, subject.data, 1);
                 draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
-                drawOutline(data);
+                drawOutline(dJSON);
                 d3.select(draggedNode).each(p => seleOutNode(p.data.id));
               }
               // eslint-disable-next-line no-use-before-define
-              chart(data);
+              chart(dJSON);
             } else {
               draggedNodeChildrenRenew(subject, 0, 0);
               draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
@@ -447,14 +375,6 @@ function drawMindnode(data) {
     foreign.append('xhtml:p')
       .attr('contenteditable', false)
       .text(d => d.data.name);
-    // gNode.append('text')
-    //   .attr('class', d => `depth_${d.depth}`)
-    //   .attr('dy', -5)
-    //   .text(d => d.data.name)
-    //   .clone(true)
-    //   .lower()
-    //   .attr('stroke', 'white')
-    //   .attr('class', d => `depth_${d.depth} back`);
     gNode.append('rect')
       .attr('class', d => `depth_${d.depth}`)
       .attr('y', -17 - 4)
@@ -496,7 +416,6 @@ function drawMindnode(data) {
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
-      // d3.select(n[i]).selectAll(`text.depth_${d.depth}`).text(d.data.name);
       d3.select(n[i]).select('p').text(d.data.name);
       d3.select(n[i]).select('rect')
         .attr('class', `depth_${d.depth}`)
@@ -551,8 +470,8 @@ function drawMindnode(data) {
     }
   }
   function chart(d) {
-    addIdJSON(d, '0');
-    root = tree(d);
+    d.addId();
+    root = tree(d.data[0]);
     let x0 = Infinity;
     let x1 = -x0;
     renewY(root, 0);
@@ -565,13 +484,12 @@ function drawMindnode(data) {
     gMindnode.attr('transform', `translate(${gOutlineSize.width + 20},${root.nodeHeight - x0})`);
     gNodeNest([root], gMindnode);
   }
-  chart(data);
+  chart(dJSON);
 }
 
 axios.get('/data').then((res) => {
-  dataJSON = res.data;
-  addIdJSON(dataJSON, '0');
-  addTextWidth(dataJSON);
+  dataJSON = new DataJSON([res.data]);
+  addTextWidth(dataJSON.data[0]);
   drawOutline(dataJSON);
   drawMindnode(dataJSON);
 });
