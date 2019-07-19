@@ -2,7 +2,7 @@
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 let dataJSON = null;
 const fontSize = 14;
-const transition = d3.transition().duration(1000).ease(d3.easePoly);
+const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
@@ -259,7 +259,6 @@ function drawMindnode(dJSON) {
     const newParentNode = document.getElementById('newParentNode');
     if (newParentNode) { // 更新json数据data
       newParentNode.removeAttribute('id');
-      newParentNode.getElementsByTagName('rect')[0].setAttribute('stroke-opacity', 0);
       d3.select(draggedNode).each((draggedD) => {
         d3.select(newParentNode).each((newParentD) => {
           if (!dJSON.del(draggedD.data)) {
@@ -312,8 +311,7 @@ function drawMindnode(dJSON) {
                 drawOutline(dJSON);
                 d3.select(draggedNode).each(p => seleOutNode(p.data.id));
               }
-              // eslint-disable-next-line no-use-before-define
-              chart(dJSON);
+              chart(dJSON);// eslint-disable-line no-use-before-define
             } else {
               draggedNodeChildrenRenew(subject, 0, 0);
               draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
@@ -335,8 +333,7 @@ function drawMindnode(dJSON) {
   function appendNode(enter) {
     const gNode = enter.append('g');
     gNode.attr('class', d => `depth_${d.depth}`)
-      .attr('stroke-linejoin', 'round')
-      .attr('stroke-width', 3)
+      .attr('transform', 'translate(0,0)')
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     const foreign = gNode.append('foreignObject')
@@ -354,19 +351,10 @@ function drawMindnode(dJSON) {
       .attr('height', 16 + 8)
       .attr('rx', 3)
       .attr('ry', 3)
-      .attr('stroke', 'blue')
-      .attr('fill', 'blue')
-      .attr('stroke-width', 2)
-      .attr('fill-opacity', 0)
-      .attr('stroke-opacity', 0)
       .lower();
     gNode.append('path')
       .attr('id', d => `path_${d.data.id}`)
       .attr('class', d => `depth_${d.depth}`)
-      .attr('fill', 'none')
-      .attr('stroke', '#555')
-      .attr('stroke-opacity', 0.4)
-      .attr('stroke-width', 1.5)
       .attr('d', link({
         source: [0, 0],
         target: [0, 0],
@@ -388,10 +376,13 @@ function drawMindnode(dJSON) {
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
       const node = d3.select(n[i]);
-      node.select('foreignObject').attr('width', d.data.textWidth + 11);
+      node.select('foreignObject')
+        .transition(transition)
+        .attr('width', d.data.textWidth + 11);
       node.select('p').text(d.data.name);
       node.select('rect')
         .attr('class', `depth_${d.depth}`)
+        .transition(transition)
         .attr('width', d.data.textWidth + 8);
       node.select('path')
         .attr('id', `path_${d.data.id}`)

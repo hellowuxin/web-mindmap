@@ -4,6 +4,20 @@ svg {
 g {
   cursor: default;
 }
+#mindnode rect {
+  stroke: blue;
+  fill: blue;
+  stroke-width: 2;
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+#mindnode path {
+  fill: none;
+  stroke: #555;
+  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
 #selectedMindnode > rect {
   fill-opacity: 0.2;
 }
