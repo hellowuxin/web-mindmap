@@ -41,6 +41,7 @@
 * **drawMindnode**(data) - 根据数据data绘制mindnode
 * **draggedNodeRenew**(draggedNode, targetX, targetY, dura) - 更新draggedNode的位置，dura设定了动画过渡的时间
 * **draggedNodeChildrenRenew**(d, px, py) - 更新数据d中的平移量px和py
+* **dragback**(subject, draggedNode) - 
 * **clicked**() - 
 * **dragged**() - 拖拽中：拖拽node
 * **dragended**() - 拖拽结束时：更新node
