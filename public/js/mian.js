@@ -50,17 +50,17 @@ function seleMindNode(g, id) {
 }
 function checkEditFocus() {
   const editP = document.querySelector('#editing p');
-  if (document.activeElement !== editP) {
+  if (document.activeElement !== editP) { // unfocus
     clearInterval(checkEditTimer);
-    const editText = editP.innerHTML;
-    d3.select('g#editing').each((d) => {
+    const editText = editP.textContent;
+    d3.select('g#editing').each((d, i, n) => {
+      n[i].removeAttribute('id');
+      editP.setAttribute('contenteditable', false);
       if (d.data.name !== editText) {
         d.data.name = editText;
-        addTextWidth(dataJSON.data);
-        // eslint-disable-next-line no-use-before-define
-        drawOutline(dataJSON);
-        // eslint-disable-next-line no-use-before-define
-        drawMindnode(dataJSON);
+        addTextWidth(dataJSON.data[0]);
+        drawOutline(dataJSON);// eslint-disable-line no-use-before-define
+        drawMindnode(dataJSON);// eslint-disable-line no-use-before-define
       }
     });
   }
@@ -209,10 +209,6 @@ function drawMindnode(dJSON) {
     const clickedNode = this;
     if (clickedNode.isSameNode(edit)) { // 正在编辑
       return;
-    }
-    if (edit) {
-      edit.removeAttribute('id');
-      d3.select(edit).select('p').attr('contenteditable', false);
     }
     if (clickedNode.isSameNode(sele)) { // 进入编辑状态
       sele.setAttribute('id', 'editing');
@@ -416,11 +412,13 @@ function drawMindnode(dJSON) {
       .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
-      d3.select(n[i]).select('p').text(d.data.name);
-      d3.select(n[i]).select('rect')
+      const node = d3.select(n[i]);
+      node.select('foreignObject').attr('width', d.data.textWidth + 11);
+      node.select('p').text(d.data.name);
+      node.select('rect')
         .attr('class', `depth_${d.depth}`)
         .attr('width', d.data.textWidth + 8);
-      d3.select(n[i]).select('path')
+      node.select('path')
         .attr('id', `path_${d.data.id}`)
         .attr('class', `depth_${d.depth}`)
         .transition(transition)
