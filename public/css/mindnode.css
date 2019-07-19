@@ -1,8 +1,20 @@
 svg {
   display: inline-block;
 }
+g {
+  cursor: default;
+}
 #selectedMindnode > rect {
   fill-opacity: 0.2;
+}
+#newParentNode > rect {
+  stroke-opacity: 0.2;
+}
+#outline path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+  stroke: #555;
 }
 #selectedOutnode > rect {
   fill: rgb(204, 211, 253);
@@ -17,6 +29,5 @@ foreignObject p {
   margin: 0;
 }
 #hidden {
-  font-size: 14px;
   visibility: hidden;
 }
