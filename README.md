@@ -22,7 +22,7 @@
 
 * **seleOutNode**(id) - 选中对应数据id的节点
 * **seleMindNode**(g, id) - 递归查找并选中对应数据id的节点
-* **addTextWidth**(d) - 给数据d添加d.name在text中的宽度，方便后续绘制
+* **addTextWidth**(d) - 给数据d添加d.name在text中的宽度
 * **checkEditFocus**() - 当正在编辑的节点不再focus时，根据数据更新图
 
 ## Outline绘制
@@ -51,9 +51,10 @@
 * **renewY**(r, textWidth) - 根据textWidth更新数据y值
 * **chart**(d) - 处理数据d并开始绘制
 
-## 仍待开发
+## 仍待处理
 
 * 面向过程转面向对象
 * mindnode和outline的联动
-* 对递归函数进行优化
 * 如何区分dragStart 和 click
+* 动画的顺滑过渡
+* 单元测试
