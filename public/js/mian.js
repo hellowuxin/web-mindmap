@@ -188,6 +188,10 @@ function drawMindnode(dJSON) {
       }
     }
   }
+  function dragback(subject, draggedNode) {
+    draggedNodeChildrenRenew(subject, 0, 0);
+    draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
+  }
   function clicked() {
     d3.event.stopPropagation();// 阻止捕获和冒泡阶段中当前事件的进一步传播。
     let sele = document.getElementById('selectedMindnode');
@@ -253,82 +257,78 @@ function drawMindnode(dJSON) {
     });
   }
   function dragended() {
-    const draggedNode = this;
     const { subject } = d3.event;
-    // 新的父节点
+    const draggedNode = this;
+    let draggedParentNode = draggedNode.parentNode;
+    // 拖拽的是根节点时复原
+    if (draggedParentNode.isEqualNode(gMindnode.nodes()[0])) {
+      dragback(subject, draggedNode);
+      return;
+    }
     const newParentNode = document.getElementById('newParentNode');
-    if (newParentNode) { // 更新json数据data
+    if (newParentNode) { // 建立新的父子关系
       newParentNode.removeAttribute('id');
       d3.select(draggedNode).each((draggedD) => {
         d3.select(newParentNode).each((newParentD) => {
-          if (!dJSON.del(draggedD.data)) {
-            console.log('delJSON error!');
-          }
-          if (!dJSON.add(newParentD.data, draggedD.data)) {
-            console.log('addJSON error!');
-          } else {
-            draggedNode.parentNode.removeChild(draggedNode);
-            // eslint-disable-next-line no-use-before-define
-            chart(dJSON);
-            drawOutline(dJSON);
-            d3.select(draggedNode).each(d => seleOutNode(d.data.id));
-          }
+          // 处理数据
+          dJSON.del(draggedD.data);
+          dJSON.add(newParentD.data, draggedD.data);
+          draggedNode.parentNode.removeChild(draggedNode);
+          // 绘制图形
+          chart(dJSON);// eslint-disable-line no-use-before-define
+          drawOutline(dJSON);
+          d3.select(draggedNode).each((d) => {
+            const { id } = d.data;
+            seleOutNode(id);
+            seleMindNode(gMindnode, id);
+          });
         });
       });
-    } else if (Math.abs(subject.px) > root.nodeHeight) { // 更新json数据顺序
-      let draggedParentNode = draggedNode.parentNode;
-      if (!draggedParentNode.isEqualNode(gMindnode.nodes()[0])) { // 拖拽非根节点时
-        draggedParentNode = d3.select(draggedParentNode);
-        draggedParentNode.each((d) => {
-          const draggedBrotherNodes = draggedParentNode.selectAll(`g.depth_${d.depth + 1}`).filter((a, i, n) => !draggedNode.isSameNode(n[i]));
-          if (draggedBrotherNodes) { // 不为空时
-            const a = {
-              x0: Infinity,
-              x1: -Infinity,
-            };
-            draggedBrotherNodes.each((b, i, n) => {
-              if (b.x > subject.x && b.x > a.x1 && b.x < (subject.x + subject.px)) {
-                a.x1 = b.x;
-                a.b1 = b.data;// 前兄弟节点
-                a.n1 = n[i];
-              }
-              if (b.x < subject.x && b.x < a.x0 && b.x > (subject.x + subject.px)) {
-                a.x0 = b.x;
-                a.b0 = b.data;// 后兄弟节点
-                a.n0 = n[i];
-              }
-            });
-            if (a.b0 || a.b1) {
-              dJSON.del(subject.data);
-              if (a.b0) {
-                dJSON.insert(a.b0, subject.data);
-                draggedNode.parentNode.insertBefore(draggedNode, a.n0);
-                drawOutline(dJSON);
-                d3.select(draggedNode).each(p => seleOutNode(p.data.id));
-              } else if (a.b1) {
-                dJSON.insert(a.b1, subject.data, 1);
-                draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
-                drawOutline(dJSON);
-                d3.select(draggedNode).each(p => seleOutNode(p.data.id));
-              }
-              chart(dJSON);// eslint-disable-line no-use-before-define
-            } else {
-              draggedNodeChildrenRenew(subject, 0, 0);
-              draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
-            }
-          } else {
-            draggedNodeChildrenRenew(subject, 0, 0);
-            draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
-          }
-        });
-      } else { // 拖拽根节点时直接复原
-        draggedNodeChildrenRenew(subject, 0, 0);
-        draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
-      }
-    } else { // 复原
-      draggedNodeChildrenRenew(subject, 0, 0);
-      draggedNodeRenew(draggedNode, subject.dx, subject.dy, 1000);
+      return;
     }
+    if (Math.abs(subject.px) < root.nodeHeight) { // 平移距离不足以调换兄弟节点顺序时复原
+      dragback(subject, draggedNode);
+      return;
+    }
+    // 调换兄弟节点顺序
+    draggedParentNode = d3.select(draggedParentNode);
+    draggedParentNode.each((d) => {
+      const draggedBrotherNodes = draggedParentNode.selectAll(`g.depth_${d.depth + 1}`).filter((a, i, n) => !draggedNode.isSameNode(n[i]));
+      if (!draggedBrotherNodes.nodes()[0]) { // 无兄弟节点时复原
+        dragback(subject, draggedNode);
+        return;
+      }
+      const a = { x0: Infinity, x1: -Infinity };
+      draggedBrotherNodes.each((b, i, n) => {
+        if (b.x > subject.x && b.x > a.x1 && b.x < (subject.x + subject.px)) { // 新哥哥节点
+          a.x1 = b.x;
+          a.b1 = b.data;
+          a.n1 = n[i];
+        }
+        if (b.x < subject.x && b.x < a.x0 && b.x > (subject.x + subject.px)) { // 新弟弟节点
+          a.x0 = b.x;
+          a.b0 = b.data;
+          a.n0 = n[i];
+        }
+      });
+      if (a.b0 || a.b1) { // 存在新兄弟节点时调换节点顺序
+        dJSON.del(subject.data);
+        if (a.b0) { // 插入在兄弟节点前面
+          dJSON.insert(a.b0, subject.data);
+          draggedNode.parentNode.insertBefore(draggedNode, a.n0);
+          drawOutline(dJSON);
+          d3.select(draggedNode).each(p => seleOutNode(p.data.id));
+        } else if (a.b1) { // 插入在兄弟节点后面
+          dJSON.insert(a.b1, subject.data, 1);
+          draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
+          drawOutline(dJSON);
+          d3.select(draggedNode).each(p => seleOutNode(p.data.id));
+        }
+        chart(dJSON);// eslint-disable-line no-use-before-define
+      } else {
+        dragback(subject, draggedNode);
+      }
+    });
   }
   function appendNode(enter) {
     const gNode = enter.append('g');
@@ -398,14 +398,6 @@ function drawMindnode(dJSON) {
     });
     return update;
   }
-  function tree(d) {
-    const r = d3.hierarchy(d);// 根据指定的分层数据构造根节点
-    r.nodeHeight = nodeSize.height;
-    r.nodeWidth = gMindnodeSize.width / (r.height + 1);// r.height与叶子节点的最大距离
-    // nodeSize设置了节点的大小（高宽)
-    // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
-    return d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
-  }
   function gNodeNest(d, gParent) {
     const gNode = gParent.selectAll(`g${d[0] ? `.depth_${d[0].depth}` : ''}`)
       .data(d)
@@ -415,7 +407,7 @@ function drawMindnode(dJSON) {
       );
     gNode.on('click', clicked)
       .call(d3.drag().on('drag', dragged).on('end', dragended));
-
+    // 生成嵌套节点
     for (let index = 0; index < d.length; index += 1) {
       let dChildren = d[index].children;
       if (!dChildren) {
@@ -435,7 +427,12 @@ function drawMindnode(dJSON) {
   }
   function chart(d) {
     d.addId();
-    root = tree(d.data[0]);
+    const r = d3.hierarchy(d.data[0]);// 根据指定的分层数据构造根节点
+    r.nodeHeight = nodeSize.height;
+    r.nodeWidth = gMindnodeSize.width / (r.height + 1);// r.height与叶子节点的最大距离
+    // nodeSize设置了节点的大小（高宽)
+    // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
+    root = d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
     let x0 = Infinity;
     let x1 = -x0;
     renewY(root, 0);
