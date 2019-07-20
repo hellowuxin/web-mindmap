@@ -225,11 +225,15 @@ function drawMindnode(dJSON) {
   function dragged() {
     const draggedNode = this;
     // 选中
-    const selectedNode = document.getElementById('selectedMindnode');
-    if (selectedNode && selectedNode.isSameNode(draggedNode)) {
-      selectedNode.removeAttribute('id');
+    const sele = document.getElementById('selectedMindnode');
+    if (sele && !sele.isSameNode(draggedNode)) {
+      sele.removeAttribute('id');
     }
-    draggedNode.setAttribute('id', 'selectedMindnode');
+    d3.select(draggedNode).attr('id', 'selectedMindnode')
+      .each((d) => {
+        const { id } = d.data;
+        seleOutNode(id);
+      });
     // 拖拽
     const { subject } = d3.event;
     const py = d3.event.x - subject.x;
@@ -253,7 +257,7 @@ function drawMindnode(dJSON) {
       if ((targetY > rect.y) && (targetY < rect.y + rect.width)
       && (targetX > rect.x) && (targetX < rect.x + rect.height)) {
         gNode.setAttribute('id', 'newParentNode');
-      } else {
+      } else if (gNode.getAttribute('id') === 'newParentNode') {
         gNode.removeAttribute('id');
       }
     });
@@ -324,8 +328,8 @@ function drawMindnode(dJSON) {
         }
         dJSON.addId();
         drawOutline(dJSON);
-        d3.select(draggedNode).each(p => seleOutNode(p.data.id));
         chart(dJSON);// eslint-disable-line no-use-before-define
+        d3.select(draggedNode).each(p => seleOutNode(p.data.id));
       } else {
         dragback(subject, draggedNode);
       }
