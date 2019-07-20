@@ -8,6 +8,6 @@ server.listen(80);
 
 app.use(express.static('public'));
 app.get('/data', (req, res) => {
-  const data = JSON.parse(fs.readFileSync('public/json/learn.json'));
+  const data = JSON.parse(fs.readFileSync(`public/json/${req.query.filename}.json`));
   res.send(data);
 });

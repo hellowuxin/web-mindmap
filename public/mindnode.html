@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>思维导图</title>
   <link rel="stylesheet" href="css/mindnode.css">
+  <link rel="stylesheet" href="css/popLayer.css">
   <script src="https://d3js.org/d3.v5.js"></script>
   <script src="https://d3js.org/d3-hierarchy.v1.min.js"></script>
   <script src="js/axios.min.js"></script>
@@ -12,9 +13,14 @@
 <body>
   <svg>
     <g id="outline"></g>
+    <g id="hotkey"></g>
     <g id="mindnode"></g>
     <g id="hidden"></g>
   </svg>
+  <div id="pop-up-layer">
+    <div name='blank'>空白节点</div>
+    <div name='learn'>样例展示</div>
+  </div>
   <script src="js/mian.js"></script>
 </body>
 </html>

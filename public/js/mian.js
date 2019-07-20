@@ -15,11 +15,19 @@ const gOutlineSize = { width: 200, height: 0 };
 const gOutNode = gOutline.append('g');
 const gOutPath = gOutline.append('g');
 
+const gHotkey = d3.select('g#hotkey').attr('transform', `translate(${gOutlineSize.width + 20}, 500)`);
 const gMindnode = d3.select('g#mindnode');
 const gMindnodeSize = { width: svgSize.width - gOutlineSize.width - 20 };
 
 const gHidden = d3.select('g#hidden');
 
+function drawHotkey() {
+  gHotkey.append('text').text('选中状态下：');
+  gHotkey.append('text').text('Tab添加子节点').attr('transform', 'translate(20, 20)');
+  gHotkey.append('text').text('Enter添加弟弟节点').attr('transform', 'translate(20, 40)');
+  gHotkey.append('text').text('Backspace/delete删除节点').attr('transform', 'translate(20, 60)');
+  gHotkey.append('text').text('单击编辑节点').attr('transform', 'translate(20, 80)');
+}
 function seleOutNode(id) {
   const gList = gOutNode.selectAll('g');
   gList.filter(d => d.data.id === id).attr('id', 'selectedOutnode');
@@ -444,19 +452,23 @@ function drawMindnode(dJSON) {
 }
 function keyboardSvg(newJSON, sele) {
   dataJSON.addId();
-  drawHiddenText(newJSON);
+  if (newJSON) {
+    drawHiddenText(newJSON);
+  }
   drawMindnode(dataJSON);
   drawOutline(dataJSON);
-  seleOutNode(newJSON.id);
-  sele.attr('id', '');
-  seleMindNode(gMindnode, newJSON.id);
-  d3.select('#selectedMindnode')
-    .attr('id', 'editing')
-    .select('p')
-    .attr('contenteditable', true);
-  document.querySelector('#editing p').focus();
-  document.execCommand('selectAll', false);
-  checkEditTimer = setInterval(checkEditFocus, interval);
+  if (sele) {
+    seleOutNode(newJSON.id);
+    sele.attr('id', '');
+    seleMindNode(gMindnode, newJSON.id);
+    d3.select('#selectedMindnode')
+      .attr('id', 'editing')
+      .select('p')
+      .attr('contenteditable', true);
+    document.querySelector('#editing p').focus();
+    document.execCommand('selectAll', false);
+    checkEditTimer = setInterval(checkEditFocus, interval);
+  }
 }
 // 监听键盘
 document.addEventListener('keydown', (event) => {
@@ -473,19 +485,40 @@ document.addEventListener('keydown', (event) => {
       keyboardSvg(newJSON, sele);
     });
   } else if (keyName === 'Enter') { // 添加弟弟节点
-    sele.each((d) => {
-      dataJSON.insert(d.data, newJSON, 1);
-      // n[i].parentNode.insertBefore(newNode, n[i].nextSibling);
+    sele.each((d, i, n) => {
+      if (n[i].parentNode.isSameNode(gMindnode.nodes()[0])) { // 根节点enter时，等效tab
+        dataJSON.add(d.data, newJSON);
+      } else {
+        dataJSON.insert(d.data, newJSON, 1);
+      }
       keyboardSvg(newJSON, sele);
+    });
+  } else if (keyName === 'Backspace') { // 删除节点
+    sele.each((d) => {
+      dataJSON.del(d.data);
+      keyboardSvg();
     });
   } else {
     console.log(keyName);
   }
 });
-axios.get('/data').then((res) => {
-  dataJSON = new DataJSON([res.data]);
-  dataJSON.addId();
-  traverse(dataJSON.data[0]);
-  drawOutline(dataJSON);
-  drawMindnode(dataJSON);
+
+const popDivs = document.querySelectorAll('#pop-up-layer div');
+popDivs.forEach((n) => {
+  n.onclick = () => {
+    const f = n.getAttribute('name');
+    document.getElementById('pop-up-layer').style.display = 'none';
+    axios.get('/data', {
+      params: {
+        filename: f,
+      },
+    }).then((res) => {
+      dataJSON = new DataJSON([res.data]);
+      dataJSON.addId();
+      traverse(dataJSON.data[0]);
+      drawHotkey();
+      drawOutline(dataJSON);
+      drawMindnode(dataJSON);
+    });
+  };
 });
