@@ -6,7 +6,8 @@ const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
-let checkEditTimer = null;// 计时器
+
+let checkEditTimer = null;
 const interval = 300;
 
 const gOutline = d3.select('g#outline');
@@ -130,14 +131,14 @@ function drawOutline(dJSON) {
       .text(d => d.data.name);
   }
   function updateNode(update) {
-    update.transition(transition).attr('transform', d => `translate(0,${d.x})`);
+    update.attr('transform', d => `translate(0,${d.x})`);
     update.select('p').text(d => d.data.name);
   }
   function appendPath(enter) {
     enter.append('path').attr('d', shapePath);
   }
   function updatePath(update) {
-    update.transition(transition).attr('d', shapePath);
+    update.attr('d', shapePath);
   }
   function draw(r) {
     let index = 0;
@@ -338,8 +339,6 @@ function drawMindnode(dJSON) {
   function appendNode(enter) {
     const gNode = enter.append('g');
     gNode.attr('class', d => `depth_${d.depth}`)
-      .attr('transform', 'translate(0,0)')
-      .transition(transition)
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     const foreign = gNode.append('foreignObject')
       .attr('width', d => d.data.textWidth + 11)
@@ -360,12 +359,7 @@ function drawMindnode(dJSON) {
     gNode.append('path')
       .attr('id', d => `path_${d.data.id}`)
       .attr('class', d => `depth_${d.depth}`)
-      .attr('d', link({
-        source: [0, 0],
-        target: [0, 0],
-      }))
       .lower()
-      .transition(transition)
       .attr('d', d => `${link({
         source: [
           (d.parent ? d.parent.y + d.parent.data.textWidth : 0) - d.y,
@@ -381,13 +375,10 @@ function drawMindnode(dJSON) {
       .attr('transform', d => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
       const node = d3.select(n[i]);
-      node.select('foreignObject')
-        .transition(transition)
-        .attr('width', d.data.textWidth + 11);
+      node.select('foreignObject').attr('width', d.data.textWidth + 11);
       node.select('p').text(d.data.name);
       node.select('rect')
         .attr('class', `depth_${d.depth}`)
-        .transition(transition)
         .attr('width', d.data.textWidth + 8);
       node.select('path')
         .attr('id', `path_${d.data.id}`)
@@ -451,7 +442,46 @@ function drawMindnode(dJSON) {
   }
   chart(dJSON);
 }
-
+function keyboardSvg(newJSON, sele) {
+  dataJSON.addId();
+  drawHiddenText(newJSON);
+  drawMindnode(dataJSON);
+  drawOutline(dataJSON);
+  seleOutNode(newJSON.id);
+  sele.attr('id', '');
+  seleMindNode(gMindnode, newJSON.id);
+  d3.select('#selectedMindnode')
+    .attr('id', 'editing')
+    .select('p')
+    .attr('contenteditable', true);
+  document.querySelector('#editing p').focus();
+  document.execCommand('selectAll', false);
+  checkEditTimer = setInterval(checkEditFocus, interval);
+}
+// 监听键盘
+document.addEventListener('keydown', (event) => {
+  const sele = d3.select('#selectedMindnode');
+  if (!sele.nodes()[0]) {
+    return;
+  }
+  const newJSON = { name: '新建节点' };
+  const keyName = event.key;
+  event.preventDefault();
+  if (keyName === 'Tab') { // 添加子节点
+    sele.each((d) => {
+      dataJSON.add(d.data, newJSON);
+      keyboardSvg(newJSON, sele);
+    });
+  } else if (keyName === 'Enter') { // 添加弟弟节点
+    sele.each((d) => {
+      dataJSON.insert(d.data, newJSON, 1);
+      // n[i].parentNode.insertBefore(newNode, n[i].nextSibling);
+      keyboardSvg(newJSON, sele);
+    });
+  } else {
+    console.log(keyName);
+  }
+});
 axios.get('/data').then((res) => {
   dataJSON = new DataJSON([res.data]);
   dataJSON.addId();
