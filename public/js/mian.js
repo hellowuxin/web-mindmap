@@ -19,16 +19,6 @@ const gMindnodeSize = { width: svgSize.width - gOutlineSize.width - 20 };
 
 const gHidden = d3.select('g#hidden');
 
-function addTextWidth(d) {
-  const text = gHidden.append('text').text(d.name).nodes()[0];
-  d.textWidth = text.getBBox().width;
-  if (d.children) {
-    for (let index = 0; index < d.children.length; index += 1) {
-      const dChild = d.children[index];
-      addTextWidth(dChild);
-    }
-  }
-}
 function seleOutNode(id) {
   const gList = gOutNode.selectAll('g');
   gList.filter(d => d.data.id === id).attr('id', 'selectedOutnode');
@@ -50,6 +40,19 @@ function seleMindNode(g, id) {
   }
   return false;
 }
+function drawHiddenText(d) { // 取得textWidth
+  const text = gHidden.append('text').text(d.name).nodes()[0];
+  d.textWidth = text.getBBox().width;
+}
+function traverse(d) { // 遍历
+  drawHiddenText(d);
+  if (d.children) {
+    for (let index = 0; index < d.children.length; index += 1) {
+      const dChild = d.children[index];
+      traverse(dChild);
+    }
+  }
+}
 function checkEditFocus() {
   const editP = document.querySelector('#editing p');
   if (document.activeElement !== editP) { // unfocus
@@ -60,7 +63,7 @@ function checkEditFocus() {
       editP.setAttribute('contenteditable', false);
       if (d.data.name !== editText) {
         d.data.name = editText;
-        addTextWidth(dataJSON.data[0]);
+        drawHiddenText(d.data);
         drawOutline(dataJSON);// eslint-disable-line no-use-before-define
         drawMindnode(dataJSON);// eslint-disable-line no-use-before-define
       }
@@ -160,7 +163,6 @@ function drawOutline(dJSON) {
         update => updatePath(update),
       );
   }
-  dJSON.addId();
   draw(d3.hierarchy(dJSON.data[0]));
 }
 function drawMindnode(dJSON) {
@@ -260,8 +262,7 @@ function drawMindnode(dJSON) {
     const { subject } = d3.event;
     const draggedNode = this;
     let draggedParentNode = draggedNode.parentNode;
-    // 拖拽的是根节点时复原
-    if (draggedParentNode.isEqualNode(gMindnode.nodes()[0])) {
+    if (draggedParentNode.isEqualNode(gMindnode.nodes()[0])) { // 拖拽的是根节点时复原
       dragback(subject, draggedNode);
       return;
     }
@@ -273,6 +274,7 @@ function drawMindnode(dJSON) {
           // 处理数据
           dJSON.del(draggedD.data);
           dJSON.add(newParentD.data, draggedD.data);
+          dJSON.addId();
           draggedNode.parentNode.removeChild(draggedNode);
           // 绘制图形
           chart(dJSON);// eslint-disable-line no-use-before-define
@@ -316,14 +318,13 @@ function drawMindnode(dJSON) {
         if (a.b0) { // 插入在兄弟节点前面
           dJSON.insert(a.b0, subject.data);
           draggedNode.parentNode.insertBefore(draggedNode, a.n0);
-          drawOutline(dJSON);
-          d3.select(draggedNode).each(p => seleOutNode(p.data.id));
         } else if (a.b1) { // 插入在兄弟节点后面
           dJSON.insert(a.b1, subject.data, 1);
           draggedNode.parentNode.insertBefore(draggedNode, a.n1.nextSibling);
-          drawOutline(dJSON);
-          d3.select(draggedNode).each(p => seleOutNode(p.data.id));
         }
+        dJSON.addId();
+        drawOutline(dJSON);
+        d3.select(draggedNode).each(p => seleOutNode(p.data.id));
         chart(dJSON);// eslint-disable-line no-use-before-define
       } else {
         dragback(subject, draggedNode);
@@ -426,7 +427,6 @@ function drawMindnode(dJSON) {
     }
   }
   function chart(d) {
-    d.addId();
     const r = d3.hierarchy(d.data[0]);// 根据指定的分层数据构造根节点
     r.nodeHeight = nodeSize.height;
     r.nodeWidth = gMindnodeSize.width / (r.height + 1);// r.height与叶子节点的最大距离
@@ -450,7 +450,8 @@ function drawMindnode(dJSON) {
 
 axios.get('/data').then((res) => {
   dataJSON = new DataJSON([res.data]);
-  addTextWidth(dataJSON.data[0]);
+  dataJSON.addId();
+  traverse(dataJSON.data[0]);
   drawOutline(dataJSON);
   drawMindnode(dataJSON);
 });
