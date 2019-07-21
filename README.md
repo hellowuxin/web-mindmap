@@ -65,9 +65,10 @@
 
 ## 仍待处理
 
-* 面向过程转面向对象
+* 面向对象、函数式编程 - [什么是函数式编程思维?](https://www.zhihu.com/question/28292740)
+* 尾递归优化 - [什么是尾递归?](https://www.zhihu.com/question/20761771)
+* 前端自动化测试 - [如何进行前端自动化测试?](https://www.zhihu.com/question/29922082)
 * mindnode和outline的联动
 * 如何区分dragStart 和 click
 * 动画的顺滑过渡
 * isEqualJSON
-* 单元测试
