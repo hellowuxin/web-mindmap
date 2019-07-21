@@ -503,22 +503,22 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-const popDivs = document.querySelectorAll('#pop-up-layer div');
-popDivs.forEach((n) => {
-  n.onclick = () => {
-    const f = n.getAttribute('name');
-    document.getElementById('pop-up-layer').style.display = 'none';
-    axios.get('/data', {
-      params: {
-        filename: f,
-      },
-    }).then((res) => {
-      dataJSON = new DataJSON([res.data]);
-      dataJSON.addId();
-      traverse(dataJSON.data[0]);
-      drawHotkey();
-      drawOutline(dataJSON);
-      drawMindnode(dataJSON);
-    });
-  };
+// const popDivs = document.querySelectorAll('#pop-up-layer div');
+// popDivs.forEach((n) => {
+//   n.onclick = () => {
+//     const f = n.getAttribute('name');
+document.getElementById('pop-up-layer').style.display = 'none';
+axios.get('/data', {
+  params: {
+    filename: 'learn',
+  },
+}).then((res) => {
+  dataJSON = new DataJSON([res.data]);
+  dataJSON.addId();
+  traverse(dataJSON.data[0]);
+  drawHotkey();
+  drawOutline(dataJSON);
+  drawMindnode(dataJSON);
 });
+//   };
+// });
