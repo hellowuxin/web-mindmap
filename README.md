@@ -4,6 +4,8 @@
 
 拖拽、删除、添加、编辑等功能都已得到相对粗糙的实现（[DEMO](https://www.5xin.xyz/mindnode.html)）
 
+**本地运行**：下载本项目 + node express.js
+
 # 开发手册
 
 理清楚该网页的代码，方便后续开发。
