@@ -1,3 +1,9 @@
+# 项目介绍
+
+初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图mindmap
+
+拖拽、删除、添加、编辑等功能都已得到相对粗糙的实现（[DEMO](https://www.5xin.xyz/mindnode.html)）
+
 # 开发手册
 
 理清楚该网页的代码，方便后续开发。
