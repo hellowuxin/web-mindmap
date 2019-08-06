@@ -144,10 +144,11 @@ function drawOutline(dJSON) {
     update.select('p').text(d => d.data.name);
   }
   function appendPath(enter) {
-    enter.append('path').attr('d', shapePath);
+    enter.append('path').attr('d', shapePath)
+      .attr('stroke', d => (d.target.data.color));
   }
   function updatePath(update) {
-    update.attr('d', shapePath);
+    update.attr('d', shapePath).attr('stroke', d => (d.target.data.color));
   }
   function draw(r) {
     let index = 0;
@@ -166,6 +167,7 @@ function drawOutline(dJSON) {
         enter => appendNode(enter),
         update => updateNode(update),
       );
+    console.log(r.links());
     gOutPath.selectAll('path')
       .data(r.links())
       .join(
@@ -389,14 +391,6 @@ function drawMindnode(dJSON) {
             target: [0, 0],
           })}L${d.data.textWidth},0`);
       } else if (enterData[0].data.id === '0') { // 根节点
-        gNode.append('rect')
-          .attr('id', d => `rect_${d.data.id}`)
-          .attr('y', -15)
-          .attr('x', -8)
-          .attr('width', d => d.data.textWidth + 8)
-          .attr('height', 16 + 8)
-          .attr('rx', 3)
-          .attr('ry', 3);
         foreign.attr('transform', `translate(${-9},${-17})`);
         rect.attr('y', -15).attr('x', -8);
       }
@@ -546,8 +540,8 @@ axios.get('/data', {
   dataJSON.addId();
   traverse(dataJSON.data[0]);
   drawHotkey();
-  drawOutline(dataJSON);
   drawMindnode(dataJSON);
+  drawOutline(dataJSON);
 });
 //   };
 // });
