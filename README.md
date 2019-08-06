@@ -2,7 +2,7 @@
 
 初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图mindmap
 
-拖拽、删除、添加、编辑等功能都已得到相对粗糙的实现（[DEMO](https://www.5xin.xyz/mindnode.html)）
+拖拽、删除、添加、编辑等功能都已得到相对粗糙的实现（[DEMO](https://mindnode.5xin.xyz)）
 
 **本地运行**：
 
