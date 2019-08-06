@@ -167,7 +167,6 @@ function drawOutline(dJSON) {
         enter => appendNode(enter),
         update => updateNode(update),
       );
-    console.log(r.links());
     gOutPath.selectAll('path')
       .data(r.links())
       .join(
