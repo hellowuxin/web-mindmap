@@ -6,6 +6,7 @@ const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
+const colorScale = d3.scaleOrdinal(d3.schemePaired);
 
 let checkEditTimer = null;
 const interval = 300;
@@ -177,7 +178,7 @@ function drawOutline(dJSON) {
 function drawMindnode(dJSON) {
   let root = null;
   const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
-  const nodeSize = { width: 200, height: 25 };
+  const nodeSize = { width: 200, height: 35 };
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const tran = d3.transition().duration(dura).ease(d3.easePoly);
     d3.select(draggedNode).transition(tran).attr('transform', `translate(${targetY},${targetX})`);
@@ -351,11 +352,11 @@ function drawMindnode(dJSON) {
     const foreign = gNode.append('foreignObject')
       .attr('width', d => d.data.textWidth + 11)
       .attr('height', 30)
-      .attr('transform', `translate(${-5},${-24})`);
+      .attr('transform', `translate(${-5},${-27})`);
     foreign.append('xhtml:p')
       .attr('contenteditable', false)
       .text(d => d.data.name);
-    gNode.append('rect')
+    const rect = gNode.append('rect')
       .attr('class', d => `depth_${d.depth}`)
       .attr('y', -17 - 4)
       .attr('x', -4)
@@ -364,17 +365,43 @@ function drawMindnode(dJSON) {
       .attr('rx', 3)
       .attr('ry', 3)
       .lower();
-    gNode.append('path')
-      .attr('id', d => `path_${d.data.id}`)
-      .attr('class', d => `depth_${d.depth}`)
-      .lower()
-      .attr('d', d => `${link({
-        source: [
-          (d.parent ? d.parent.y + d.parent.data.textWidth : 0) - d.y,
-          (d.parent ? d.parent.x : 0) - d.x,
-        ],
-        target: [0, 0],
-      })}L${d.data.textWidth},0`);
+
+    const enterData = enter.data();
+    if (enterData.length) {
+      if (enterData[0].data.id !== '0') {
+        gNode.append('path')
+          .attr('id', d => `path_${d.data.id}`)
+          .attr('class', d => `depth_${d.depth}`)
+          .lower()
+          .attr('stroke', (d, i) => {
+            if (!d.parent || d.parent.data.id === '0') {
+              d.data.color = colorScale(i);
+              return d.data.color;
+            }
+            d.data.color = d.parent.data.color;
+            return d.data.color;
+          })
+          .attr('d', d => `${link({
+            source: [
+              (d.parent ? d.parent.y + d.parent.data.textWidth : 0) - d.y,
+              (d.parent ? d.parent.x : 0) - d.x,
+            ],
+            target: [0, 0],
+          })}L${d.data.textWidth},0`);
+      } else if (enterData[0].data.id === '0') { // 根节点
+        gNode.append('rect')
+          .attr('id', d => `rect_${d.data.id}`)
+          .attr('y', -15)
+          .attr('x', -8)
+          .attr('width', d => d.data.textWidth + 8)
+          .attr('height', 16 + 8)
+          .attr('rx', 3)
+          .attr('ry', 3);
+        foreign.attr('transform', `translate(${-9},${-17})`);
+        rect.attr('y', -15).attr('x', -8);
+      }
+    }
+
     return gNode;
   }
   function updateNode(update) {
@@ -478,13 +505,14 @@ document.addEventListener('keydown', (event) => {
   }
   const newJSON = { name: '新建节点' };
   const keyName = event.key;
-  event.preventDefault();
   if (keyName === 'Tab') { // 添加子节点
+    event.preventDefault();
     sele.each((d) => {
       dataJSON.add(d.data, newJSON);
       keyboardSvg(newJSON, sele);
     });
   } else if (keyName === 'Enter') { // 添加弟弟节点
+    event.preventDefault();
     sele.each((d, i, n) => {
       if (n[i].parentNode.isSameNode(gMindnode.nodes()[0])) { // 根节点enter时，等效tab
         dataJSON.add(d.data, newJSON);
@@ -494,6 +522,7 @@ document.addEventListener('keydown', (event) => {
       keyboardSvg(newJSON, sele);
     });
   } else if (keyName === 'Backspace') { // 删除节点
+    event.preventDefault();
     sele.each((d) => {
       dataJSON.del(d.data);
       keyboardSvg();

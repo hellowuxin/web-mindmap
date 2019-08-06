@@ -1,8 +1,15 @@
+body {
+  font-family: sans-serif;
+  color: rgb(76, 85, 102);
+}
 svg {
   display: inline-block;
 }
 g {
   cursor: default;
+}
+#hotkey text {
+  fill: rgb(76, 85, 102);
 }
 #mindnode rect {
   stroke: blue;
@@ -11,11 +18,14 @@ g {
   fill-opacity: 0;
   stroke-opacity: 0;
 }
+#mindnode #rect_0 {
+  stroke: rgb(204, 211, 253);
+  stroke-opacity: 1;
+  fill: white;
+}
 #mindnode path {
   fill: none;
-  stroke: #555;
-  stroke-opacity: 0.4;
-  stroke-width: 1.5;
+  stroke-width: 4;
   stroke-linecap: round;
 }
 #selectedMindnode > rect {
