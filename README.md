@@ -11,6 +11,8 @@
 *  node mindnode.js 
 *  http://localhost:3000
 
+**部分功能的具体实现没有更新到开发手册，等有时间的时候再更新**
+
 # 开发手册
 
 理清楚该网页的代码，方便后续开发。
@@ -30,6 +32,8 @@
 ## DataJSON类
 
 [DataJSON](https://github.com/hellowuxin/dataJSON)
+
+对DataJSON进行了一定的修改，添加对颜色属性的操作
 
 ## 辅助函数
 
