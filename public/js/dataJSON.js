@@ -1,4 +1,7 @@
+/* global d3:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
+let colorNumber = 0;
+const colorScale = d3.scaleOrdinal(d3.schemePaired);
 function isEqualJSON(a, b) { // 判断a，b是否完全一致
   // 局限性：
   // 如果对象里属性的位置发生变化，转换来的字符串就不相等，但实际我们只需要看他们的内容是否一致，与顺序没有关系，所以这种方法有局限性。
@@ -9,9 +12,35 @@ function isEqualJSON(a, b) { // 判断a，b是否完全一致
   }
   return false;
 }
-// eslint-disable-next-line no-unused-vars
-class DataJSON {
-  constructor(d) {
+function breadthTraverse(d, c) { // 广度遍历
+  if (d.children) {
+    for (let index = 0; index < d.children.length; index += 1) {
+      const dChild = d.children[index];
+      if (!c) {
+        dChild.color = colorScale(colorNumber);
+        colorNumber += 1;
+      } else {
+        dChild.color = c;
+      }
+    }
+    for (let index = 0; index < d.children.length; index += 1) {
+      const dChild = d.children[index];
+      breadthTraverse(dChild, dChild.color);
+    }
+  }
+}
+function inheritColor(d, c) {
+  if (d.children) {
+    for (let index = 0; index < d.children.length; index += 1) {
+      const dChild = d.children[index];
+      dChild.color = c;
+      inheritColor(dChild, c);
+    }
+  }
+}
+class DataJSON { // eslint-disable-line
+  constructor(d) { // d为数组
+    breadthTraverse(d[0]);
     this.data = d;
   }
 
@@ -48,6 +77,13 @@ class DataJSON {
         if (!dataChild.children) {
           dataChild.children = [];
         }
+        if (dataChild.id === '0') { // 根节点
+          d.color = colorScale(colorNumber);
+          colorNumber += 1;
+        } else {
+          d.color = dataChild.color; // 继承父节点的color
+        }
+        inheritColor(d, d.color);
         dataChild.children.push(d);
         return true;
       }

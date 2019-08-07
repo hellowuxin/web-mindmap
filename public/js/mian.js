@@ -6,7 +6,6 @@ const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
 const svg = d3.select('svg');
 const svgSize = { width: 1300, height: 650 };
 svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
-const colorScale = d3.scaleOrdinal(d3.schemePaired);
 
 let checkEditTimer = null;
 const interval = 300;
@@ -54,7 +53,7 @@ function drawHiddenText(d) { // 取得textWidth
   const text = gHidden.append('text').text(d.name).nodes()[0];
   d.textWidth = text.getBBox().width;
 }
-function traverse(d) { // 遍历
+function traverse(d) { // 深度遍历
   drawHiddenText(d);
   if (d.children) {
     for (let index = 0; index < d.children.length; index += 1) {
@@ -374,14 +373,7 @@ function drawMindnode(dJSON) {
           .attr('id', d => `path_${d.data.id}`)
           .attr('class', d => `depth_${d.depth}`)
           .lower()
-          .attr('stroke', (d, i) => {
-            if (!d.parent || d.parent.data.id === '0') {
-              d.data.color = colorScale(i);
-              return d.data.color;
-            }
-            d.data.color = d.parent.data.color;
-            return d.data.color;
-          })
+          .attr('stroke', d => d.data.color)
           .attr('d', d => `${link({
             source: [
               (d.parent ? d.parent.y + d.parent.data.textWidth : 0) - d.y,
@@ -411,6 +403,7 @@ function drawMindnode(dJSON) {
       node.select('path')
         .attr('id', `path_${d.data.id}`)
         .attr('class', `depth_${d.depth}`)
+        .attr('stroke', d.data.color)
         .transition(transition)
         .attr('d', `${link({
           source: [
@@ -520,16 +513,9 @@ document.addEventListener('keydown', (event) => {
       dataJSON.del(d.data);
       keyboardSvg();
     });
-  } else {
-    console.log(keyName);
   }
 });
 
-// const popDivs = document.querySelectorAll('#pop-up-layer div');
-// popDivs.forEach((n) => {
-//   n.onclick = () => {
-//     const f = n.getAttribute('name');
-document.getElementById('pop-up-layer').style.display = 'none';
 axios.get('/data', {
   params: {
     filename: 'learn',
@@ -542,5 +528,3 @@ axios.get('/data', {
   drawMindnode(dataJSON);
   drawOutline(dataJSON);
 });
-//   };
-// });
