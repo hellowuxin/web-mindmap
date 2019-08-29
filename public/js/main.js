@@ -30,12 +30,12 @@ function drawHotkey() {
 }
 function seleOutNode(id) {
   const gList = gOutNode.selectAll('g');
-  gList.filter(d => d.data.id === id).attr('id', 'selectedOutnode');
-  gList.filter(d => d.data.id !== id).attr('id', '');
+  gList.filter((d) => d.data.id === id).attr('id', 'selectedOutnode');
+  gList.filter((d) => d.data.id !== id).attr('id', '');
 }
 function seleMindNode(g, id) {
   const gList = g.selectAll('g');
-  const sele = gList.filter(d => d.data.id === id);
+  const sele = gList.filter((d) => d.data.id === id);
   if (sele) {
     sele.attr('id', 'selectedMindnode');
     return true;
@@ -124,30 +124,30 @@ function drawOutline(dJSON) {
   function appendNode(enter) {
     const gEnter = enter.append('g')
       .attr('class', 'outnode')
-      .attr('transform', d => `translate(0,${d.x})`)
+      .attr('transform', (d) => `translate(0,${d.x})`)
       .on('click', clicked);
     gEnter.append('rect')
       .attr('width', nodeSize.width)
       .attr('height', nodeSize.height);
-    const gap = fontSize * 3 / 2;
+    const gap = (fontSize * 3) / 2;
     const foreign = gEnter.append('foreignObject')
-      .attr('width', d => (nodeSize.width - d.y - gap))
+      .attr('width', (d) => (nodeSize.width - d.y - gap))
       .attr('height', nodeSize.height)
-      .attr('transform', d => `translate(${d.y + gap},${0})`);
+      .attr('transform', (d) => `translate(${d.y + gap},${0})`);
     foreign.append('xhtml:p')
       .attr('contenteditable', false)
-      .text(d => d.data.name);
+      .text((d) => d.data.name);
   }
   function updateNode(update) {
-    update.attr('transform', d => `translate(0,${d.x})`);
-    update.select('p').text(d => d.data.name);
+    update.attr('transform', (d) => `translate(0,${d.x})`);
+    update.select('p').text((d) => d.data.name);
   }
   function appendPath(enter) {
     enter.append('path').attr('d', shapePath)
-      .attr('stroke', d => (d.target.data.color));
+      .attr('stroke', (d) => (d.target.data.color));
   }
   function updatePath(update) {
-    update.attr('d', shapePath).attr('stroke', d => (d.target.data.color));
+    update.attr('d', shapePath).attr('stroke', (d) => (d.target.data.color));
   }
   function draw(r) {
     let index = 0;
@@ -163,21 +163,21 @@ function drawOutline(dJSON) {
     gOutNode.selectAll('g')
       .data(rDescendants)
       .join(
-        enter => appendNode(enter),
-        update => updateNode(update),
+        (enter) => appendNode(enter),
+        (update) => updateNode(update),
       );
     gOutPath.selectAll('path')
       .data(r.links())
       .join(
-        enter => appendPath(enter),
-        update => updatePath(update),
+        (enter) => appendPath(enter),
+        (update) => updatePath(update),
       );
   }
   draw(d3.hierarchy(dJSON.data[0]));
 }
 function drawMindnode(dJSON) {
   let root = null;
-  const link = d3.linkHorizontal().x(d => d[0]).y(d => d[1]);
+  const link = d3.linkHorizontal().x((d) => d[0]).y((d) => d[1]);
   const nodeSize = { width: 200, height: 35 };
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const tran = d3.transition().duration(dura).ease(d3.easePoly);
@@ -339,7 +339,7 @@ function drawMindnode(dJSON) {
         dJSON.addId();
         drawOutline(dJSON);
         chart(dJSON);// eslint-disable-line no-use-before-define
-        d3.select(draggedNode).each(p => seleOutNode(p.data.id));
+        d3.select(draggedNode).each((p) => seleOutNode(p.data.id));
       } else {
         dragback(subject, draggedNode);
       }
@@ -347,20 +347,20 @@ function drawMindnode(dJSON) {
   }
   function appendNode(enter) {
     const gNode = enter.append('g');
-    gNode.attr('class', d => `depth_${d.depth}`)
-      .attr('transform', d => `translate(${d.dy},${d.dx})`);
+    gNode.attr('class', (d) => `depth_${d.depth}`)
+      .attr('transform', (d) => `translate(${d.dy},${d.dx})`);
     const foreign = gNode.append('foreignObject')
-      .attr('width', d => d.data.textWidth + 11)
+      .attr('width', (d) => d.data.textWidth + 11)
       .attr('height', 30)
       .attr('transform', `translate(${-5},${-27})`);
     foreign.append('xhtml:p')
       .attr('contenteditable', false)
-      .text(d => d.data.name);
+      .text((d) => d.data.name);
     const rect = gNode.append('rect')
-      .attr('class', d => `depth_${d.depth}`)
+      .attr('class', (d) => `depth_${d.depth}`)
       .attr('y', -17 - 4)
       .attr('x', -4)
-      .attr('width', d => d.data.textWidth + 8)
+      .attr('width', (d) => d.data.textWidth + 8)
       .attr('height', 16 + 8)
       .attr('rx', 3)
       .attr('ry', 3)
@@ -370,11 +370,11 @@ function drawMindnode(dJSON) {
     if (enterData.length) {
       if (enterData[0].data.id !== '0') {
         gNode.append('path')
-          .attr('id', d => `path_${d.data.id}`)
-          .attr('class', d => `depth_${d.depth}`)
+          .attr('id', (d) => `path_${d.data.id}`)
+          .attr('class', (d) => `depth_${d.depth}`)
           .lower()
-          .attr('stroke', d => d.data.color)
-          .attr('d', d => `${link({
+          .attr('stroke', (d) => d.data.color)
+          .attr('d', (d) => `${link({
             source: [
               (d.parent ? d.parent.y + d.parent.data.textWidth : 0) - d.y,
               (d.parent ? d.parent.x : 0) - d.x,
@@ -390,9 +390,9 @@ function drawMindnode(dJSON) {
     return gNode;
   }
   function updateNode(update) {
-    update.attr('class', d => `depth_${d.depth}`)
+    update.attr('class', (d) => `depth_${d.depth}`)
       .transition(transition)
-      .attr('transform', d => `translate(${d.dy},${d.dx})`);
+      .attr('transform', (d) => `translate(${d.dy},${d.dx})`);
     update.each((d, i, n) => {
       const node = d3.select(n[i]);
       node.select('foreignObject').attr('width', d.data.textWidth + 11);
@@ -419,8 +419,8 @@ function drawMindnode(dJSON) {
     const gNode = gParent.selectAll(`g${d[0] ? `.depth_${d[0].depth}` : ''}`)
       .data(d)
       .join(
-        enter => appendNode(enter),
-        update => updateNode(update),
+        (enter) => appendNode(enter),
+        (update) => updateNode(update),
       );
     gNode.on('click', clicked)
       .call(d3.drag().on('drag', dragged).on('end', dragended));
