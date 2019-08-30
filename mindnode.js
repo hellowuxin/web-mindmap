@@ -5,7 +5,6 @@ const app = express();
 const server = require('http').createServer(app);// http
 
 server.listen(3000);
-console.log('http://localhost:3000');
 
 app.use(express.static('public'));
 app.get('/data', (req, res) => {

@@ -1,5 +1,6 @@
 /* global d3 axios DataJSON:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
+
 let dataJSON = null;
 const fontSize = 14;
 const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
