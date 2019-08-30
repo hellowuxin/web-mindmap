@@ -1,5 +1,5 @@
 body {
-  color: rgb(76, 85, 102);
+  color: #4c5566;
   font-family: sans-serif;
 }
 
@@ -12,11 +12,11 @@ g {
 }
 
 #hotkey text {
-  fill: rgb(76, 85, 102);
+  fill: #4c5566;
 }
 
 .outnode > rect {
-  fill: rgb(239, 239, 239);
+  fill: #efefef;
 }
 
 #mindnode rect {
@@ -48,12 +48,13 @@ g {
 }
 
 #selectedOutnode > rect {
-  fill: rgb(204, 211, 253);
+  fill: #ccd3fd;
 }
 
 #hidden {
   visibility: hidden;
 }
+
 /* stylelint-disable */
 foreignObject {
   padding: 5px;
@@ -62,4 +63,7 @@ foreignObject {
 foreignObject p {
   margin: 0;
 }
+
 /* stylelint-enable */
+
+/*# sourceMappingURL=mindmap.css.map */

@@ -1,11 +1,67 @@
-$width: 1300;
-$height: 650;
+$fontColor: rgb(76, 85, 102);
 
 body {
+  color: $fontColor;
   font-family: sans-serif;
-  color: rgb(76, 85, 102);
 }
 
 svg {
   display: inline-block;
 }
+
+g {
+  cursor: default;
+}
+
+#hotkey text {
+  fill: $fontColor;
+}
+
+.outnode > rect {
+  fill: rgb(239, 239, 239);
+}
+
+#mindnode rect {
+  fill: blue;
+  fill-opacity: 0;
+  stroke: blue;
+  stroke-opacity: 0;
+  stroke-width: 2;
+}
+
+#mindnode path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+#selectedMindnode > rect {
+  fill-opacity: 0.2;
+}
+
+#newParentNode > rect {
+  stroke-opacity: 0.2;
+}
+
+#outline path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+#selectedOutnode > rect {
+  fill: rgb(204, 211, 253);
+}
+
+#hidden {
+  visibility: hidden;
+}
+/* stylelint-disable */
+foreignObject {
+  padding: 5px;
+}
+
+foreignObject p {
+  margin: 0;
+}
+/* stylelint-enable */
