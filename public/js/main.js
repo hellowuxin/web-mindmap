@@ -1,32 +1,25 @@
 /* global d3 axios DataJSON:true */
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 let dataJSON = null;
-const fontSize = 14;
 const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
-const svg = d3.select('svg');
-const svgSize = { width: 1300, height: 650 };
-svg.attr('width', svgSize.width).attr('height', svgSize.height).attr('font-size', fontSize);
-
 let checkEditTimer = null;
 const interval = 300;
 
-const gOutline = d3.select('g#outline');
-const gOutlineSize = { width: 200, height: 0 };
-const gOutNode = gOutline.append('g');
-const gOutPath = gOutline.append('g');
+const svgOutline = d3.select('.outline');
+const gOutNode = svgOutline.append('g');
+const gOutPath = svgOutline.append('g').attr('class', 'outpath');
 
-const gHotkey = d3.select('g#hotkey').attr('transform', `translate(${gOutlineSize.width + 20}, 500)`);
+const gHotkey = d3.select('g#hotkey');
 const gMindnode = d3.select('g#mindnode');
-const gMindnodeSize = { width: svgSize.width - gOutlineSize.width - 20 };
 
 const gHidden = d3.select('g#hidden');
 
 function drawHotkey() {
-  gHotkey.append('text').text('选中状态下：');
-  gHotkey.append('text').text('Tab添加子节点').attr('transform', 'translate(20, 20)');
-  gHotkey.append('text').text('Enter添加弟弟节点').attr('transform', 'translate(20, 40)');
-  gHotkey.append('text').text('Backspace/delete删除节点').attr('transform', 'translate(20, 60)');
-  gHotkey.append('text').text('单击编辑节点').attr('transform', 'translate(20, 80)');
+  gHotkey.append('text').text('选中状态下：').attr('transform', 'translate(0, 20)');
+  gHotkey.append('text').text('Tab添加子节点').attr('transform', 'translate(20, 40)');
+  gHotkey.append('text').text('Enter添加弟弟节点').attr('transform', 'translate(20, 60)');
+  gHotkey.append('text').text('Backspace/delete删除节点').attr('transform', 'translate(20, 80)');
+  gHotkey.append('text').text('单击编辑节点').attr('transform', 'translate(20, 100)');
 }
 function seleOutNode(id) {
   const gList = gOutNode.selectAll('g');
@@ -80,8 +73,7 @@ function checkEditFocus() {
   }
 }
 function drawOutline(dJSON) {
-  const nodeSize = { width: gOutlineSize.width, height: 30 };
-  gOutPath.attr('transform', `translate(${fontSize},${nodeSize.height / 2})`);
+  const nodeSize = { width: 200, height: 30 };
   function shapePath(d) {
     const x0 = d.source.x;
     const y0 = d.source.y;
@@ -129,7 +121,7 @@ function drawOutline(dJSON) {
     gEnter.append('rect')
       .attr('width', nodeSize.width)
       .attr('height', nodeSize.height);
-    const gap = (fontSize * 3) / 2;
+    const gap = 21;
     const foreign = gEnter.append('foreignObject')
       .attr('width', (d) => (nodeSize.width - d.y - gap))
       .attr('height', nodeSize.height)
@@ -158,8 +150,6 @@ function drawOutline(dJSON) {
     });
 
     const rDescendants = r.descendants();
-    gOutlineSize.height = rDescendants.length * (nodeSize.height + 1);
-    gOutline.attr('width', gOutlineSize.width).attr('height', gOutlineSize.height);
     gOutNode.selectAll('g')
       .data(rDescendants)
       .join(
@@ -178,7 +168,6 @@ function drawOutline(dJSON) {
 function drawMindnode(dJSON) {
   let root = null;
   const link = d3.linkHorizontal().x((d) => d[0]).y((d) => d[1]);
-  const nodeSize = { width: 200, height: 35 };
   function draggedNodeRenew(draggedNode, targetX, targetY, dura) {
     const tran = d3.transition().duration(dura).ease(d3.easePoly);
     d3.select(draggedNode).transition(tran).attr('transform', `translate(${targetY},${targetX})`);
@@ -444,8 +433,8 @@ function drawMindnode(dJSON) {
   }
   function chart(d) {
     const r = d3.hierarchy(d.data[0]);// 根据指定的分层数据构造根节点
-    r.nodeHeight = nodeSize.height;
-    r.nodeWidth = gMindnodeSize.width / (r.height + 1);// r.height与叶子节点的最大距离
+    r.nodeHeight = 35;
+    r.nodeWidth = 100;// r.height与叶子节点的最大距离
     // nodeSize设置了节点的大小（高宽)
     // 高指两个叶子节点的纵向距离，宽指两个节点的横向距离
     root = d3.tree().nodeSize([r.nodeHeight, r.nodeWidth])(r);
@@ -458,7 +447,7 @@ function drawMindnode(dJSON) {
       if (a.x > x1) x1 = a.x;// 求得最大，即最低点
       if (a.x < x0) x0 = a.x;// 求得最小，即最高点
     });
-    gMindnode.attr('transform', `translate(${gOutlineSize.width + 20},${root.nodeHeight - x0})`);
+    gMindnode.attr('transform', `translate(0,${root.nodeHeight - x0})`);
     gNodeNest([root], gMindnode);
   }
   chart(dJSON);
@@ -516,11 +505,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-axios.get('/data', {
-  params: {
-    filename: 'learn',
-  },
-}).then((res) => {
+axios.get('/json/learn.json').then((res) => {
   dataJSON = new DataJSON([res.data]);
   dataJSON.addId();
   traverse(dataJSON.data[0]);
