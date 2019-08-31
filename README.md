@@ -1,22 +1,28 @@
 # 网页思维导图
 
-## 项目介绍
+## 前言
 
-初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图mindmap
+初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图web mindmap
 
-拖拽、删除、添加、编辑等功能都已得到相对粗糙的实现（[DEMO](https://mindnode.5xin.xyz)）
+项目演示地址：<https://mindnode.5xin.xyz>
 
-**本地运行**：
+### 本地运行
 
 * git clone <https://github.com/hellowuxin/mindmap.git>
 * cd mindmap + npm install
 * node express.js
 * <http://localhost:3000>
 
+### 功能
+
+* 已实现：拖拽、编辑、删除、添加
+* 未实现：缩放、折叠
+
 ## 开发手册
 
 理清楚该网页的代码，方便后续开发。
-**部分功能的具体实现没有更新到开发手册，等有时间的时候再更新**
+
+部分功能的具体实现没有更新到开发手册，等有时间的时候再更新
 
 ## 简写变量
 
