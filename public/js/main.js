@@ -14,6 +14,10 @@ const gMindnode = d3.select('g#mindnode');
 
 const gHidden = d3.select('g#hidden');
 
+function zoomed() {
+  const { transform } = d3.event;
+  gMindnode.attr('transform', transform);
+}
 function drawHotkey() {
   gHotkey.append('text').text('选中状态下：').attr('transform', 'translate(0, 20)');
   gHotkey.append('text').text('Tab添加子节点').attr('transform', 'translate(20, 40)');
@@ -442,12 +446,15 @@ function drawMindnode(dJSON) {
     let x1 = -x0;
     renewY(root, 0);
     root.each((a) => {
-      a.dx = a.x - (a.parent ? a.parent.x : 0);
-      a.dy = a.y - (a.parent ? a.parent.y : 0);
       if (a.x > x1) x1 = a.x;// 求得最大，即最低点
       if (a.x < x0) x0 = a.x;// 求得最小，即最高点
     });
-    gMindnode.attr('transform', `translate(0,${root.nodeHeight - x0})`);
+    root.each((a) => {
+      a.x -= (x0 - 24);
+      a.y += 10;
+      a.dx = a.x - (a.parent ? a.parent.x : 0);
+      a.dy = a.y - (a.parent ? a.parent.y : 0);
+    });
     gNodeNest([root], gMindnode);
   }
   chart(dJSON);
@@ -504,7 +511,9 @@ document.addEventListener('keydown', (event) => {
     });
   }
 });
-
+const svg = d3.select('svg.mindmap');
+const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', zoomed);
+svg.call(zoom).on('dblclick.zoom', null);
 axios.get('/json/learn.json').then((res) => {
   dataJSON = new DataJSON([res.data]);
   dataJSON.addId();
