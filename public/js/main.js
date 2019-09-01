@@ -152,7 +152,6 @@ function drawOutline(dJSON) {
       n.y = n.depth * 8;
       index += 1;
     });
-
     const rDescendants = r.descendants();
     gOutNode.selectAll('g')
       .data(rDescendants)

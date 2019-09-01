@@ -18,8 +18,10 @@ svg {
 }
 
 .mindmap {
+  background-color: #eeeef3;
+  flex: auto;
   height: 650px;
-  width: 100%;
+  margin-right: 8px;
 }
 .mindmap rect {
   fill: blue;
@@ -46,7 +48,7 @@ svg {
   width: 200px;
 }
 .outline rect {
-  fill: #efefef;
+  fill: #eeeef3;
 }
 .outline .outpath {
   transform: translate(14px, 15px);
@@ -61,8 +63,9 @@ svg {
 }
 
 .tip {
-  bottom: 0;
-  position: absolute;
+  background-color: #eeeef3;
+  height: 120px;
+  width: 200px;
 }
 .tip text {
   fill: #4c5566;

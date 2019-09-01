@@ -20,8 +20,10 @@ svg {
 }
 
 .mindmap {
+  background-color: rgb(238, 238, 243);
+  flex: auto;
   height: 650px;
-  width: 100%;
+  margin-right: 8px;
 
   rect {
     fill: blue;
@@ -52,7 +54,7 @@ svg {
   width: 200px;
 
   rect {
-    fill: rgb(239, 239, 239);
+    fill: rgb(238, 238, 243);
   }
 
   .outpath {
@@ -71,8 +73,9 @@ svg {
 }
 
 .tip {
-  bottom: 0;
-  position: absolute;
+  background-color: rgb(238, 238, 243);
+  height: 120px;
+  width: 200px;
 
   text {
     fill: $fontColor;
