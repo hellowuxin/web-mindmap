@@ -62,6 +62,7 @@ function traverse(d) { // 深度遍历
 function checkEditFocus() {
   const editP = document.querySelector('#editing p');
   if (document.activeElement !== editP) { // unfocus
+    window.getSelection().removeAllRanges();// 清除选中
     clearInterval(checkEditTimer);
     const editText = editP.textContent;
     d3.select('g#editing').each((d, i, n) => {
@@ -208,7 +209,7 @@ function drawMindnode(dJSON) {
       sele.setAttribute('id', 'editing');
       d3.select(sele).select('p').attr('contenteditable', true);
       document.querySelector('#editing p').focus();
-      document.execCommand('selectAll', false);
+      document.execCommand('selectAll', false, null);
       checkEditTimer = setInterval(checkEditFocus, interval);
     } else { // 选中
       // 选中新的selectedMindnode
