@@ -2,8 +2,6 @@
 /* eslint no-param-reassign: ['error', { 'props': false }] */
 let dataJSON = null;
 const transition = d3.transition().duration(1000).ease(d3.easePolyInOut);
-let checkEditTimer = null;
-const interval = 300;
 
 const svgOutline = d3.select('.outline');
 const gOutNode = svgOutline.append('g');
@@ -59,24 +57,6 @@ function traverse(d) { // 深度遍历
     }
   }
 }
-function checkEditFocus() {
-  const editP = document.querySelector('#editing p');
-  if (document.activeElement !== editP) { // unfocus
-    window.getSelection().removeAllRanges();// 清除选中
-    clearInterval(checkEditTimer);
-    const editText = editP.textContent;
-    d3.select('g#editing').each((d, i, n) => {
-      n[i].removeAttribute('id');
-      editP.setAttribute('contenteditable', false);
-      if (d.data.name !== editText) {
-        d.data.name = editText;
-        drawHiddenText(d.data);
-        drawOutline(dataJSON);// eslint-disable-line no-use-before-define
-        drawMindnode(dataJSON);// eslint-disable-line no-use-before-define
-      }
-    });
-  }
-}
 function drawOutline(dJSON) {
   const nodeSize = { width: 200, height: 30 };
   function shapePath(d) {
@@ -99,7 +79,6 @@ function drawOutline(dJSON) {
       d3.select(sele).select('p').attr('contenteditable', true);
       document.querySelector('#editing p').focus();
       document.execCommand('selectAll', false);
-      checkEditTimer = setInterval(checkEditFocus, interval);
     } else { // 选中
       // 选中新的selectedOutnode
       if (sele) {
@@ -131,9 +110,24 @@ function drawOutline(dJSON) {
       .attr('width', (d) => (nodeSize.width - d.y - gap))
       .attr('height', nodeSize.height)
       .attr('transform', (d) => `translate(${d.y + gap},${0})`);
-    foreign.append('xhtml:p')
+    const foreignP = foreign.append('xhtml:p')
       .attr('contenteditable', false)
       .text((d) => d.data.name);
+    foreignP.on('blur', () => {
+      const editP = document.querySelector('#editing p');
+      window.getSelection().removeAllRanges();// 清除选中
+      const editText = editP.textContent;
+      d3.select('g#editing').each((d, i, n) => {
+        n[i].removeAttribute('id');
+        editP.setAttribute('contenteditable', false);
+        if (d.data.name !== editText) {
+          d.data.name = editText;
+          drawHiddenText(d.data);
+          drawOutline(dataJSON);// eslint-disable-line no-use-before-define
+          drawMindnode(dataJSON);// eslint-disable-line no-use-before-define
+        }
+      });
+    });
   }
   function updateNode(update) {
     update.attr('transform', (d) => `translate(0,${d.x})`);
@@ -210,7 +204,7 @@ function drawMindnode(dJSON) {
       d3.select(sele).select('p').attr('contenteditable', true);
       document.querySelector('#editing p').focus();
       document.execCommand('selectAll', false, null);
-      checkEditTimer = setInterval(checkEditFocus, interval);
+      // checkEditTimer = setInterval(checkEditFocus, interval);
     } else { // 选中
       // 选中新的selectedMindnode
       if (sele) {
@@ -346,9 +340,24 @@ function drawMindnode(dJSON) {
       .attr('width', (d) => d.data.textWidth + 11)
       .attr('height', 30)
       .attr('transform', `translate(${-5},${-27})`);
-    foreign.append('xhtml:p')
+    const foreignP = foreign.append('xhtml:p')
       .attr('contenteditable', false)
       .text((d) => d.data.name);
+    foreignP.on('blur', () => {
+      const editP = document.querySelector('#editing p');
+      window.getSelection().removeAllRanges();// 清除选中
+      const editText = editP.textContent;
+      d3.select('g#editing').each((d, i, n) => {
+        n[i].removeAttribute('id');
+        editP.setAttribute('contenteditable', false);
+        if (d.data.name !== editText) {
+          d.data.name = editText;
+          drawHiddenText(d.data);
+          drawOutline(dataJSON);// eslint-disable-line no-use-before-define
+          drawMindnode(dataJSON);// eslint-disable-line no-use-before-define
+        }
+      });
+    });
     const rect = gNode.append('rect')
       .attr('class', (d) => `depth_${d.depth}`)
       .attr('y', -17 - 4)
@@ -476,7 +485,6 @@ function keyboardSvg(newJSON, sele) {
       .attr('contenteditable', true);
     document.querySelector('#editing p').focus();
     document.execCommand('selectAll', false);
-    checkEditTimer = setInterval(checkEditFocus, interval);
   }
 }
 // 监听键盘

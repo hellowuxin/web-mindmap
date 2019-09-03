@@ -25,10 +25,17 @@ svg {
   height: 650px;
   margin-right: 8px;
 
-  rect {
+  rect:not(.depth_0) {
     fill: blue;
     fill-opacity: 0;
     stroke: blue;
+    stroke-opacity: 0;
+    stroke-width: 2;
+  }
+
+  rect.depth_0 {
+    fill: white;
+    stroke: rgb(190, 198, 243);
     stroke-opacity: 0;
     stroke-width: 2;
   }
@@ -39,8 +46,14 @@ svg {
     stroke-width: 4;
   }
 
-  #selectedMindnode > rect {
-    fill-opacity: 0.2;
+  #selectedMindnode > rect:not(.depth_0) {
+    fill-opacity: 1;
+    opacity: 0.2;
+    stroke-opacity: 1;
+  }
+
+  #selectedMindnode > rect.depth_0 {
+    stroke-opacity: 1;
   }
 
   #newParentNode > rect {
