@@ -524,7 +524,7 @@ document.addEventListener('keydown', (event) => {
 const svg = d3.select('svg.mindmap');
 const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', zoomed);
 svg.call(zoom).on('dblclick.zoom', null);
-axios.get('/json/learn.json').then((res) => {
+axios.get('/json/blank.json').then((res) => {
   dataJSON = new DataJSON([res.data]);
   dataJSON.addId();
   traverse(dataJSON.data[0]);
