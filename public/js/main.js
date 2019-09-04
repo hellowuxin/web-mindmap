@@ -384,8 +384,8 @@ function drawMindnode(dJSON) {
             target: [0, 0],
           })}L${d.data.textWidth},0`);
       } else if (enterData[0].data.id === '0') { // 根节点
-        foreign.attr('transform', `translate(${-9},${-17})`);
-        rect.attr('y', -15).attr('x', -8);
+        foreign.attr('transform', `translate(${-10},${-15})`);
+        rect.attr('y', -9 - 4).attr('x', -5 - 4);
       }
     }
 
@@ -459,8 +459,10 @@ function drawMindnode(dJSON) {
       if (a.x < x0) x0 = a.x;// 求得最小，即最高点
     });
     root.each((a) => {
-      a.x -= (x0 - 24);
-      a.y += 10;
+      // 处理偏移量确保图像完全显示
+      a.x -= (x0 - 30);
+      a.y += 15;
+      // 相对偏移
       a.dx = a.x - (a.parent ? a.parent.x : 0);
       a.dy = a.y - (a.parent ? a.parent.y : 0);
     });
