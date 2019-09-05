@@ -424,8 +424,10 @@ function drawMindnode(dJSON) {
         (enter) => appendNode(enter),
         (update) => updateNode(update),
       );
-    gNode.on('click', clicked)
-      .call(d3.drag().on('drag', dragged).on('end', dragended));
+    gNode.on('click', clicked);
+    if (!d[0] || d[0].depth !== 0) { // 非根节点才可以拖拽
+      gNode.call(d3.drag().on('drag', dragged).on('end', dragended));
+    }
     // 生成嵌套节点
     for (let index = 0; index < d.length; index += 1) {
       let dChildren = d[index].children;
@@ -524,7 +526,7 @@ document.addEventListener('keydown', (event) => {
 const svg = d3.select('svg.mindmap');
 const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', zoomed);
 svg.call(zoom).on('dblclick.zoom', null);
-axios.get('/json/blank.json').then((res) => {
+axios.get('/json/learn.json').then((res) => {
   dataJSON = new DataJSON([res.data]);
   dataJSON.addId();
   traverse(dataJSON.data[0]);
