@@ -4,7 +4,7 @@
 
 初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图web mindmap
 
-项目演示地址：<https://mindnode.5xin.xyz>
+项目演示地址：<https://blog.5xin.xyz/mycomponents/mindmap>
 
 ### 本地运行
 
