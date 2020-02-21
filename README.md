@@ -1,5 +1,9 @@
 # 网页思维导图（web mindmap）
 
+## 目前在开发新项目——思维导图组件
+
+更加成熟的项目：<https://github.com/hellowuxin/mindmap>
+
 ## 前言
 
 初衷是想实现一个跟[MindNode](https://mindnode.com)近似的网页思维导图web mindmap
