@@ -44,10 +44,6 @@
 
 ## DataJSON类
 
-[DataJSON](https://github.com/hellowuxin/dataJSON)
-
-对DataJSON进行了一定的修改，添加对颜色属性的操作
-
 ## 辅助函数
 
 * **drawHotkey**() -
