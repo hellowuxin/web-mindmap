@@ -13,7 +13,7 @@
 ### 本地运行
 
 * git clone 本项目
-* cd mindmap + npm install
+* npm install
 * node express.js
 * <http://localhost:3000>
 
