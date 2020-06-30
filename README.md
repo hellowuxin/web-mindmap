@@ -12,7 +12,7 @@
 
 ### 本地运行
 
-* git clone <https://github.com/hellowuxin/mindmap.git>
+* git clone 本项目
 * cd mindmap + npm install
 * node express.js
 * <http://localhost:3000>
